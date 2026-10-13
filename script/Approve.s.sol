@@ -15,11 +15,13 @@ contract Approve is ScriptKeycut {
         address alpha = vm.envAddress("KEYCUT_SPENDER_ALPHA");
         address bravo = vm.envAddress("KEYCUT_SPENDER_BRAVO");
         address charlie = vm.envAddress("KEYCUT_SPENDER_CHARLIE");
+        address delta = vm.envAddress("KEYCUT_SPENDER_DELTA");
 
         vm.startBroadcast(privateKey);
         require(IERC20Approval(tokenA).approve(alpha, 1_000 ether), "alpha approval failed");
         require(IERC20Approval(tokenA).approve(bravo, 350 ether), "bravo approval failed");
         require(IERC20Approval(tokenB).approve(charlie, 75 ether), "charlie approval failed");
+        require(IERC20Approval(tokenA).approve(delta, 200 ether), "delta approval failed");
         vm.stopBroadcast();
     }
 }

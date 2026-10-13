@@ -13,6 +13,7 @@ const expected = [
   { token: manifest.tokens[0], spender: demoSpenders[0], amount: 1_000n * 10n ** 18n },
   { token: manifest.tokens[0], spender: demoSpenders[1], amount: 350n * 10n ** 18n },
   { token: manifest.tokens[1], spender: demoSpenders[2], amount: 75n * 10n ** 18n },
+  { token: manifest.tokens[0], spender: demoSpenders[3], amount: 200n * 10n ** 18n },
 ];
 const receipts = new Map((broadcast.receipts ?? []).map((receipt) => [receipt.transactionHash.toLowerCase(), receipt]));
 const transactions = broadcast.transactions ?? [];

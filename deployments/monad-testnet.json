@@ -25,8 +25,8 @@
       "spender": "0xa44450c1660A9600336E3581EBF489a3562748c6",
       "label": "Demo spender Alpha",
       "allowance": "1000000000000000000000",
-      "transactionHash": "0x73468e076903db2ab8ed5b344545bfe11ae9baae357a83ab3ca41cac6633689e",
-      "blockNumber": "70696768"
+      "transactionHash": "0xd3dfc53e1759003ac9cb97fbfc835d944ae69dfafa7a913070ad190918e75f44",
+      "blockNumber": "70786921"
     },
     {
       "token": "0xA6533b67365CE20F1Bf340dc6eEa7aEf9df1C430",
@@ -34,8 +34,8 @@
       "spender": "0x7148acaE93F8CfB377E714FdE4139D4616f0EDCe",
       "label": "Demo spender Bravo",
       "allowance": "350000000000000000000",
-      "transactionHash": "0x5decf6d199871276930cb9a4bf7ecd82a0a1f0e4bd18a9e9a8b03895cc8a0cf9",
-      "blockNumber": "70696771"
+      "transactionHash": "0x758396ee377efa679731cf29249129bffb3fefb85c1dc8013744f4f140ff36f9",
+      "blockNumber": "70786930"
     },
     {
       "token": "0x1B5A6FfEEC742f47Baf08327cFfEd7a80C5DAcf0",
@@ -43,8 +43,17 @@
       "spender": "0x0f8598Dce6BA9ad5DEee6B2fbfbA5389d68C94A9",
       "label": "Demo spender Charlie",
       "allowance": "75000000000000000000",
-      "transactionHash": "0x64ec075485eb531cce8c7a43112c0e060b7021137d1647f7d1feb7316ce3a3cc",
-      "blockNumber": "70696773"
+      "transactionHash": "0x45b54959912520999e9aaaa513fc4f258e68ee659fff3b6681390b6e2943561a",
+      "blockNumber": "70786939"
+    },
+    {
+      "token": "0xA6533b67365CE20F1Bf340dc6eEa7aEf9df1C430",
+      "tokenSymbol": "KUSD",
+      "spender": "0xD85CD56112B8ef8959D822237f63a86caCBd3872",
+      "label": "Demo spender Delta",
+      "allowance": "200000000000000000000",
+      "transactionHash": "0x9b5a374d62d5029312fed1cc39536ae1f1815e2091c6b79e422ada98e2201e00",
+      "blockNumber": "70802854"
     }
   ]
 }
