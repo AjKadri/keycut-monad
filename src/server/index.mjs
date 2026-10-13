@@ -162,4 +162,4 @@ export async function discover({
   return attachGrants(result, { owner: account, grantAddress, logs: result.grantLogs, client, blockNumber: end });
 }
 
-export { revoke, verify } from "../permissions.mjs";
+export { revoke, revokeGrant, verify } from "../permissions.mjs";

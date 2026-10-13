@@ -14,11 +14,13 @@ export const dynamic = 'force-dynamic'
 const requestsPerMinute = createIpRateLimiter({ limit: 10, windowMs: 60_000 })
 const maxUint256 = (1n << 256n) - 1n
 type DiscoveryApproval = { token: string; spender: string; allowance: string }
+type DiscoveryGrant = { agent: string; token: string; cap: string; spent: string; expiry: string; active: boolean }
 const symbolAbi = [{ type: 'function', name: 'symbol', stateMutability: 'view', inputs: [], outputs: [{ type: 'string' }] }] as const
 const decimalsAbi = [{ type: 'function', name: 'decimals', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint8' }] }] as const
 
 const seededTokens = new Map(seedManifest.tokens.map(token => [token.address.toLowerCase(), { symbol: token.symbol, decimals: 18 }]))
 const seededLabels = new Map(seedManifest.approvals.map(approval => [`${approval.token.toLowerCase()}:${approval.spender.toLowerCase()}`, approval.label.replace(/^Demo spender\s*/, '')]))
+const grantContractLabel = 'Keycut grant contract'
 
 async function tokenMetadata(client: ReturnType<typeof createDefaultPublicClient>, chainId: number, tokens: string[]) {
   const metadata = new Map<string, { symbol: string; decimals: number | null }>()
@@ -79,7 +81,10 @@ export async function GET(request: Request) {
   const client = createDefaultPublicClient(chain)
   try {
     const result = await discover({ owner, chain, client, grantAddress: chain.id === monadTestnet.id ? grantManifest.address as `0x${string}` : undefined })
-    const metadata = await tokenMetadata(client, chain.id, result.approvals.map((approval: DiscoveryApproval) => approval.token))
+    const metadata = await tokenMetadata(client, chain.id, [
+      ...result.approvals.map((approval: DiscoveryApproval) => approval.token),
+      ...result.grants.map((grant: DiscoveryGrant) => grant.token),
+    ])
     const approvals = result.approvals.map((approval: DiscoveryApproval) => {
       const token = metadata.get(approval.token.toLowerCase()) ?? { symbol: `${approval.token.slice(0, 6)}…${approval.token.slice(-4)}`, decimals: null }
       return {
@@ -87,8 +92,15 @@ export async function GET(request: Request) {
         tokenSymbol: token.symbol,
         tokenDecimals: token.decimals,
         unlimited: BigInt(approval.allowance) === maxUint256,
-        demoLabel: chain.id === monadTestnet.id ? seededLabels.get(`${approval.token.toLowerCase()}:${approval.spender.toLowerCase()}`) ?? null : null,
+        demoLabel: chain.id === monadTestnet.id
+          ? seededLabels.get(`${approval.token.toLowerCase()}:${approval.spender.toLowerCase()}`)
+            ?? (approval.spender.toLowerCase() === grantManifest.address.toLowerCase() ? grantContractLabel : null)
+          : null,
       }
+    })
+    const grants = result.grants.map((grant: DiscoveryGrant) => {
+      const token = metadata.get(grant.token.toLowerCase()) ?? { symbol: `${grant.token.slice(0, 6)}…${grant.token.slice(-4)}`, decimals: null }
+      return { ...grant, tokenSymbol: token.symbol, tokenDecimals: token.decimals }
     })
 
     return Response.json({
@@ -96,7 +108,7 @@ export async function GET(request: Request) {
       chainId: chain.id,
       owner,
       approvals,
-      grants: result.grants,
+      grants,
       coverageReport: result.coverageReport,
       complete: result.complete,
       source: result.source,

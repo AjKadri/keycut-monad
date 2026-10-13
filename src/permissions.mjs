@@ -27,6 +27,14 @@ const allowanceAbi = [
   },
 ];
 
+const grantRevokeAbi = [{
+  type: "function",
+  name: "revoke",
+  stateMutability: "nonpayable",
+  inputs: [{ name: "agent", type: "address" }, { name: "token", type: "address" }],
+  outputs: [],
+}];
+
 const defaultPublicClient = () =>
   createPublicClient({
     chain: monadTestnet,
@@ -45,6 +53,20 @@ export async function revoke(token, spender, { walletClient, account } = {}) {
     abi: approveAbi,
     functionName: "approve",
     args: [getAddress(spender), 0n],
+    account: typeof sender === "string" ? getAddress(sender) : sender,
+  });
+}
+
+export async function revokeGrant(agent, token, { grantAddress, walletClient, account } = {}) {
+  if (!grantAddress) throw new TypeError("A grantAddress is required to revoke a grant");
+  if (!walletClient || typeof walletClient.writeContract !== "function") throw new TypeError("A walletClient is required to revoke a grant");
+  const sender = account ?? walletClient.account;
+  if (!sender) throw new TypeError("The walletClient or options must provide an account");
+  return walletClient.writeContract({
+    address: getAddress(grantAddress),
+    abi: grantRevokeAbi,
+    functionName: "revoke",
+    args: [getAddress(agent), getAddress(token)],
     account: typeof sender === "string" ? getAddress(sender) : sender,
   });
 }
