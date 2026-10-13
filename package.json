@@ -29,6 +29,7 @@
     "record:approvals": "node scripts/record-approvals.mjs",
     "discover:seed": "node examples/discover.mjs",
     "revoke:seed": "node examples/revoke-seed.mjs",
+    "verify": "node scripts/verify.mjs",
     "explorer-links": "node scripts/print-explorer-links.mjs"
   },
   "dependencies": {

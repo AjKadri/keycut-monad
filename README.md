@@ -33,12 +33,13 @@ npm run approve:testnet
 npm run record:approvals
 npm run discover:seed
 npm run revoke:seed
+npm run verify
 npm test
 npm run explorer-links
 ```
 
 The deploy command creates new contracts every time it runs. The approval command broadcasts three testnet transactions. The private key and Envio token stay in `.env.local`, which Git ignores.
-`npm test` includes read-only Monad Testnet and HyperSync checks and expects the committed seed tokens plus the revoked KEUR → Charlie state.
+`npm test` includes read-only Monad Testnet and HyperSync checks. `npm run verify` is the public PASS/FAIL audit. It uses no private key, checks the seeded approval set and both public revoke receipts, and times an empty-wallet scan.
 
 ## Network and dependencies
 
