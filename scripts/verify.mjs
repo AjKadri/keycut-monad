@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { createPublicClient, getAddress, http } from "viem";
 import { monadTestnet, monadMainnet } from "../src/chain.mjs";
-import { approvalTopic } from "../src/discovery-core.mjs";
+import { allowanceAbi, approvalTopic } from "../src/discovery-core.mjs";
 import { grantRevokedTopic } from "../src/grants.mjs";
 import { discover, verify } from "../src/server/index.mjs";
 
@@ -73,6 +73,17 @@ function receiptGrantRevocation(receipt) {
   if (!log) throw new Error("receipt has no matching GrantRevoked event");
 }
 
+async function allowanceAtReceipt(receipt, token, spender) {
+  const allowance = await testnetClient.readContract({
+    address: token,
+    abi: allowanceAbi,
+    functionName: "allowance",
+    args: [owner, spender],
+    blockNumber: receipt.blockNumber,
+  });
+  return { allowance: allowance.toString(), isRevoked: allowance === 0n };
+}
+
 async function check(label, fn) {
   try {
     const detail = await fn();
@@ -109,7 +120,7 @@ await check(`KEUR -> Charlie revoke reads 0 onchain (tx ${charlieRevokeHash})`, 
   const receipt = await testnetClient.getTransactionReceipt({ hash: charlieRevokeHash });
   assert.equal(receipt.status, "success");
   assert.equal(receiptApproval(receipt, charlieApproval.token), getAddress(charlieApproval.spender));
-  const state = await verify(owner, charlieApproval.token, charlieApproval.spender, { publicClient: testnetClient });
+  const state = await allowanceAtReceipt(receipt, charlieApproval.token, charlieApproval.spender);
   assert.deepEqual(state, { allowance: "0", isRevoked: true });
 });
 
@@ -178,7 +189,7 @@ await check(`KUSD -> Alpha revoke via browser wallet reads 0 onchain (tx ${brows
   assert.equal(receipt.status, "success");
   const receiptSpender = receiptApproval(receipt, browserApproval.token);
   assert.equal(receiptSpender, getAddress(browserApproval.spender), `receipt targets ${receiptSpender}, but Alpha is ${getAddress(browserApproval.spender)}`);
-  const state = await verify(owner, browserApproval.token, browserApproval.spender, { publicClient: testnetClient });
+  const state = await allowanceAtReceipt(receipt, browserApproval.token, browserApproval.spender);
   assert.deepEqual(state, { allowance: "0", isRevoked: true });
 });
 
