@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { encodeAbiParameters } from "viem";
 import { createApprovalAccumulator, approvalTopic, toOwnerTopic } from "../src/discovery-core.mjs";
 import { discover } from "../src/server/index.mjs";
 import { clearHyperSyncCacheForTests } from "../src/server/hypersync.mjs";
 import { monadMainnet, monadTestnet } from "../src/chain.mjs";
+import { grantCreatedTopic } from "../src/grants.mjs";
 
 const owner = "0x0000000000000000000000000000000000000001";
 
@@ -158,4 +160,40 @@ test("HyperSync rate limits fall back to a bounded RPC scan with an honest cover
   assert.equal(completeFallback.complete, true);
   assert.match(completeFallback.coverageReport, /HyperSync was rate-limited/i);
   assert.match(completeFallback.coverageReport, /requested range is fully covered/i);
+});
+
+test("RPC fallback preserves grant events found by HyperSync", async () => {
+  clearHyperSyncCacheForTests();
+  const grantAddress = "0x0000000000000000000000000000000000000009";
+  const agent = "0x0000000000000000000000000000000000000003";
+  const token = "0x0000000000000000000000000000000000000004";
+  const grantLog = {
+    address: grantAddress,
+    blockNumber: 2_000,
+    logIndex: 0,
+    transactionHash: `0x${"22".repeat(32)}`,
+    topics: [grantCreatedTopic, toOwnerTopic(owner), `0x${agent.slice(2).padStart(64, "0")}`, `0x${token.slice(2).padStart(64, "0")}`],
+    data: encodeAbiParameters([{ type: "uint256" }, { type: "uint256" }], [50n, 3_000n]),
+  };
+  const client = {
+    getBlockNumber: async () => 2_500n,
+    request: async () => [grantLog],
+    multicall: async ({ contracts }) => contracts.map(({ functionName }) => functionName === "getGrant"
+      ? { status: "success", result: { cap: 50n, spent: 10n, expiry: 3_000n, active: true } }
+      : { status: "success", result: 0n }),
+  };
+  const result = await discover({
+    owner,
+    apiToken: "unit-secret",
+    toBlock: 2_500n,
+    hypersyncClient: { get: async () => { throw Object.assign(new Error("429"), { status: 429 }); } },
+    client,
+    grantAddress,
+  });
+
+  assert.equal(result.source, "rpc-fallback");
+  assert.equal(result.grants.length, 1);
+  assert.equal(result.grants[0].agent, agent);
+  assert.equal(result.grants[0].spent, "10");
+  clearHyperSyncCacheForTests();
 });

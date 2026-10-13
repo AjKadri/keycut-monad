@@ -159,7 +159,13 @@ export async function discover({
     concurrency: 10,
     extraLogTopics: grantAddress ? grantEventTopics : [],
   });
-  return attachGrants(result, { owner: account, grantAddress, logs: result.grantLogs, client, blockNumber: end });
+  return attachGrants(result, {
+    owner: account,
+    grantAddress,
+    logs: [...history.logs, ...(result.grantLogs ?? [])],
+    client,
+    blockNumber: end,
+  });
 }
 
 export { revoke, revokeGrant, verify } from "../permissions.mjs";
