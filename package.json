@@ -3,7 +3,16 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.mjs"
+    ".": {
+      "browser": "./src/index.mjs",
+      "node": "./src/server/index.mjs",
+      "default": "./src/index.mjs"
+    },
+    "./server": {
+      "browser": null,
+      "node": "./src/server/index.mjs",
+      "default": "./src/server/index.mjs"
+    }
   },
   "scripts": {
     "test": "node --test",
@@ -19,6 +28,7 @@
     "explorer-links": "node scripts/print-explorer-links.mjs"
   },
   "dependencies": {
+    "@envio-dev/hypersync-client": "^1.4.1",
     "viem": "^2.57.5"
   }
 }

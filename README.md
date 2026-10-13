@@ -19,7 +19,7 @@ The KEUR → Demo spender Charlie approval is the revoke demonstration. `npm run
 
 ## Run locally
 
-Install Node.js, Foundry, and npm dependencies. Create `.env.local` from `.env.example` and replace the placeholder with a throwaway Monad Testnet key.
+Install Node.js, Foundry, and npm dependencies. Create `.env.local` from `.env.example`, then add a throwaway Monad Testnet key and an Envio API token. `ENVIO_API_TOKEN` is read only by the Node SDK and server-side scripts. Never expose it in a browser or name it `NEXT_PUBLIC_*`.
 
 ```sh
 cp .env.example .env.local
@@ -37,12 +37,12 @@ npm test
 npm run explorer-links
 ```
 
-The deploy command creates new contracts every time it runs. The approval command broadcasts three testnet transactions. The private key stays in `.env.local`, which Git ignores.
-`npm test` includes a read-only Monad Testnet integration check and expects the committed seed tokens plus the revoked KEUR → Charlie state.
+The deploy command creates new contracts every time it runs. The approval command broadcasts three testnet transactions. The private key and Envio token stay in `.env.local`, which Git ignores.
+`npm test` includes read-only Monad Testnet and HyperSync checks and expects the committed seed tokens plus the revoked KEUR → Charlie state.
 
 ## Network and dependencies
 
-Monad Testnet's public RPC currently rejects `eth_getLogs` ranges over 100 blocks. `discover()` uses 100-block chunks and reports the range it actually covered. Full-history scans will need a higher-limit RPC provider or an indexer.
+The Node SDK uses Envio HyperSync on Monad Testnet to scan Approval logs from block 0 by default, then reads current allowances through one RPC multicall. It caches logs per wallet for three minutes and reuses the cache without making another HyperSync request when the chain head has not advanced. If HyperSync is unavailable or rate-limited, it scans the latest 1,000 blocks through 100-block RPC `eth_getLogs` chunks and reports the exact ranges plus any unchecked history. Use `discover({ owner, source: "rpc", fromBlock })` for a bounded RPC-only scan, or pass `rpcFromBlock` to choose the fallback start. The browser-safe entry point uses RPC and requires `fromBlock`.
 
 The project uses [viem](https://viem.sh/) for EVM clients and Foundry for Solidity builds and broadcasts. No OpenZeppelin code is included in the demo token.
 

@@ -1,12 +1,14 @@
+import "../scripts/load-env-local.mjs";
 import { readFile } from "node:fs/promises";
-import { discover } from "../src/discover.mjs";
+import { discover } from "../src/server/index.mjs";
 import { verify } from "../src/permissions.mjs";
 
+const scanStarted = performance.now();
 const deployment = JSON.parse(await readFile("deployments/monad-testnet.json", "utf8"));
 const result = await discover({
   owner: deployment.owner,
-  fromBlock: BigInt(deployment.scanFromBlock),
 });
+const scanDurationMs = Math.round(performance.now() - scanStarted);
 
 const revokedSeed = deployment.approvals.find(({ label }) => label === "Demo spender Charlie");
 if (!revokedSeed) throw new Error("The seed manifest has no Demo spender Charlie approval");
@@ -31,5 +33,5 @@ const exactMatch =
   actual.size === expected.size &&
   [...expected].every(([key, allowance]) => actual.get(key) === allowance);
 
-console.log(JSON.stringify({ discovery: result, revokedAllowance: revokedState }, null, 2));
+console.log(JSON.stringify({ discovery: result, revokedAllowance: revokedState, scanDurationMs }, null, 2));
 if (!result.complete || !exactMatch) process.exitCode = 1;
