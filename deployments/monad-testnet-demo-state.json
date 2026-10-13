@@ -1,5 +1,5 @@
 {
   "chainId": 10143,
-  "grantRevokeTransactionHash": null,
-  "bravoRevokeTransactionHash": null
+  "grantRevokeTransactionHash": "0x58dbb993464a6d419274eb1f9a8d6489056df7774cd858176dd9d33f0b99fae6",
+  "bravoRevokeTransactionHash": "0x4e9feac33b861ff05b3c3df729c915675f3a098e57ed77a3fbadbf21c553d5f9"
 }
