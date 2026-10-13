@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { encodeAbiParameters } from "viem";
 import { createApprovalAccumulator, approvalTopic, toOwnerTopic } from "../src/discovery-core.mjs";
+import { discover as browserDiscover } from "../src/discover.mjs";
 import { discover } from "../src/server/index.mjs";
 import { clearHyperSyncCacheForTests } from "../src/server/hypersync.mjs";
 import { monadMainnet, monadTestnet } from "../src/chain.mjs";
@@ -26,6 +27,30 @@ test("approval parser ignores the empty fourth HyperSync topic slot", () => {
   assert.equal(accumulator.logCount, 1);
   assert.equal(accumulator.ignoredApprovalLogCount, 0);
   assert.equal(accumulator.pairs.length, 1);
+});
+
+test("browser-safe RPC discovery returns grant state when configured", async () => {
+  const grantAddress = "0x0000000000000000000000000000000000000009";
+  const agent = "0x0000000000000000000000000000000000000003";
+  const token = "0x0000000000000000000000000000000000000004";
+  const grantLog = {
+    address: grantAddress,
+    blockNumber: 10,
+    logIndex: 0,
+    transactionHash: `0x${"33".repeat(32)}`,
+    topics: [grantCreatedTopic, toOwnerTopic(owner), `0x${agent.slice(2).padStart(64, "0")}`, `0x${token.slice(2).padStart(64, "0")}`],
+    data: encodeAbiParameters([{ type: "uint256" }, { type: "uint256" }], [50n, 3_000n]),
+  };
+  const client = {
+    request: async () => [grantLog],
+    multicall: async ({ contracts }) => contracts.map(({ functionName }) => functionName === "getGrant"
+      ? { status: "success", result: { cap: 50n, spent: 10n, expiry: 3_000n, active: true } }
+      : { status: "success", result: 0n }),
+  };
+  const result = await browserDiscover({ owner, fromBlock: 0n, toBlock: 10n, client, grantAddress });
+  assert.equal(result.grants.length, 1);
+  assert.equal(result.grants[0].active, true);
+  assert.equal(result.grants[0].spent, "10");
 });
 
 function publicClient(head, onRequest = () => {}) {
