@@ -1,4 +1,7 @@
+import Link from 'next/link'
 import { LookupForm } from '../components/lookup-form'
+
+const demoWallet = '0x5E9bbd8Ba62bB50e82E9153A3999C6e358E7A748'
 
 export default function HomePage() {
   return <main className="wrap">
@@ -8,6 +11,10 @@ export default function HomePage() {
         <h1><span>See who can</span><span>spend from a</span><span>wallet.</span></h1>
         <p className="lede">Find active ERC-20 approvals, see how much each spender can use, and revoke access with your wallet.</p>
         <LookupForm />
+        <div className="demo-cta">
+          <Link className="btn btn-line" href={`/testnet/${demoWallet}`}>Try the demo wallet</Link>
+          <p>See what can spend from a Monad wallet, and revoke it.</p>
+        </div>
       </div>
       <aside className="ledger" aria-label="How Keycut works">
         <div className="ledger-head"><span>Approval check</span><span>Monad</span></div>

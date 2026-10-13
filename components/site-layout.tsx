@@ -44,7 +44,7 @@ export function SiteLayout({ children }: Readonly<{ children: React.ReactNode }>
     if ((current === 'testnet' || current === 'mainnet') && address) router.push(`/${value}/${address}`)
   }
 
-  const nav = <Link href="/" aria-current={path === '/' ? 'page' : undefined} onClick={() => setOpen(false)}>Check a wallet</Link>
+  const nav = <><Link href="/" aria-current={path === '/' ? 'page' : undefined} onClick={() => setOpen(false)}>Check a wallet</Link><Link href="/developers" aria-current={path === '/developers' ? 'page' : undefined} onClick={() => setOpen(false)}>Developers</Link></>
   const accountPath = path.startsWith('/testnet/') || path.startsWith('/mainnet/')
 
   return <WalletProvider><>
