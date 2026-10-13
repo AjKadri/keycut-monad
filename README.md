@@ -11,8 +11,11 @@ These Foundry deployments and approvals are live on Monad Testnet, chain ID 1014
 - KUSD → Demo spender Alpha: 1,000 KUSD, [approval transaction](https://testnet.monadscan.com/tx/0x73468e076903db2ab8ed5b344545bfe11ae9baae357a83ab3ca41cac6633689e)
 - KUSD → Demo spender Bravo: 350 KUSD, [approval transaction](https://testnet.monadscan.com/tx/0x5decf6d199871276930cb9a4bf7ecd82a0a1f0e4bd18a9e9a8b03895cc8a0cf9)
 - KEUR → Demo spender Charlie: 75 KEUR, [approval transaction](https://testnet.monadscan.com/tx/0x64ec075485eb531cce8c7a43112c0e060b7021137d1647f7d1feb7316ce3a3cc)
+- KEUR → Demo spender Charlie revoked: [revoke transaction](https://testnet.monadscan.com/tx/0x678f2d4c9e20e9d83f5912e6340da88c482d6254a39c3bc9e7f8d6810f528bde)
 
-`npm run discover:seed` found exactly three approval logs and read all three nonzero allowances live, with complete coverage from block `70696466` through `70698581` at the time of this run. This range starts at the first demo token deployment. It does not claim full wallet history.
+The initial seed scan found exactly three nonzero allowances, with complete coverage from block `70696466` through `70698581`. After the revoke, `verify()` read KEUR → Charlie as zero. The latest `discover()` scan returned the two remaining approvals, with complete coverage through block `70700604`. These ranges start at the first demo token deployment and do not claim full wallet history.
+
+The KEUR → Demo spender Charlie approval is the revoke demonstration. `npm run revoke:seed` sends `approve(spender, 0)` from the key in `.env.local`, waits for the receipt, verifies the live allowance is zero, and confirms discovery returns the two remaining approvals. The SDK `revoke()` accepts an injected viem wallet client, so a future browser wallet can provide its own signer. The seed runner exits without broadcasting if the allowance is already zero.
 
 ## Run locally
 
@@ -29,6 +32,7 @@ npm run simulate:approvals
 npm run approve:testnet
 npm run record:approvals
 npm run discover:seed
+npm run revoke:seed
 npm run explorer-links
 ```
 

@@ -26,7 +26,7 @@ export async function discover({
   chunkSize = 100n,
   client = createPublicClient({
     chain: monadTestnet,
-    transport: http(process.env.MONAD_TESTNET_RPC_URL ?? undefined),
+    transport: http(globalThis.process?.env?.MONAD_TESTNET_RPC_URL ?? undefined),
   }),
 }) {
   if (fromBlock === undefined) throw new TypeError("fromBlock is required to report scan coverage");

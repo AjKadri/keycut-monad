@@ -2,6 +2,9 @@
   "name": "keycut-monad",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
   "scripts": {
     "build:contracts": "forge build",
     "simulate:testnet": "node scripts/run-forge.mjs simulate-deploy",
@@ -11,6 +14,7 @@
     "record:deployments": "node scripts/record-deployments.mjs",
     "record:approvals": "node scripts/record-approvals.mjs",
     "discover:seed": "node examples/discover.mjs",
+    "revoke:seed": "node examples/revoke-seed.mjs",
     "explorer-links": "node scripts/print-explorer-links.mjs"
   },
   "dependencies": {
