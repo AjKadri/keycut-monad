@@ -1,6 +1,6 @@
 import "./load-env-local.mjs";
 import { readFile } from "node:fs/promises";
-import { createPublicClient, encodeFunctionData, getAddress, http, parseUnits } from "viem";
+import { createPublicClient, createWalletClient, encodeFunctionData, getAddress, http, parseUnits } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { monadTestnet } from "../src/chain.mjs";
 
@@ -37,8 +37,9 @@ const payAbi = [{
 
 const rpcUrl = process.env.MONAD_TESTNET_RPC_URL ?? "https://testnet-rpc.monad.xyz";
 const publicClient = createPublicClient({ chain: monadTestnet, transport: http(rpcUrl) });
+const walletClient = createWalletClient({ account, chain: monadTestnet, transport: http(rpcUrl) });
 const data = encodeFunctionData({ abi: payAbi, functionName: "pay", args: [owner, token, vendor, amount] });
-const hash = await publicClient.sendTransaction({ account, to: grantAddress, data, gas: 180_000n });
+const hash = await walletClient.sendTransaction({ account, to: grantAddress, data, gas: 180_000n });
 const receipt = await publicClient.waitForTransactionReceipt({ hash });
 const explorerLink = `${monadTestnet.blockExplorers.default.url}/tx/${hash}`;
 const status = receipt.status === "success" ? "SUCCESS" : "REVERT";
