@@ -1,6 +1,7 @@
 import { HypersyncClient, JoinMode } from "@envio-dev/hypersync-client";
 import { getAddress } from "viem";
 import { approvalTopic, toOwnerTopic } from "../discovery-core.mjs";
+import { grantEventTopics } from "../grants.mjs";
 
 const HYPERSYNC_URLS = new Map([
   [10143, "https://monad-testnet.hypersync.xyz"],
@@ -39,11 +40,11 @@ function pruneCache(now) {
   while (historyCache.size > MAX_CACHE_ENTRIES) historyCache.delete(historyCache.keys().next().value);
 }
 
-async function readApprovalHistory({ owner, fromBlock, toBlock, chainId = 10143, apiToken, client, maxRequests = DEFAULT_MAX_REQUESTS, requestTimeoutMs = DEFAULT_REQUEST_TIMEOUT_MS }) {
+async function readApprovalHistory({ owner, fromBlock, toBlock, chainId = 10143, apiToken, client, maxRequests = DEFAULT_MAX_REQUESTS, requestTimeoutMs = DEFAULT_REQUEST_TIMEOUT_MS, grantAddress }) {
   const account = getAddress(owner);
   const start = BigInt(fromBlock);
   const exclusiveEnd = BigInt(toBlock) + 1n;
-  const key = `${chainId}:${account.toLowerCase()}:${start}`;
+  const key = `${chainId}:${account.toLowerCase()}:${start}:${grantAddress?.toLowerCase() ?? "none"}`;
   const now = Date.now();
   pruneCache(now);
   if (!Number.isInteger(maxRequests) || maxRequests < 1) throw new RangeError("maxRequests must be a positive integer");
@@ -51,7 +52,7 @@ async function readApprovalHistory({ owner, fromBlock, toBlock, chainId = 10143,
   const pending = inFlight.get(key);
   if (pending) {
     await pending;
-    return readApprovalHistory({ owner, fromBlock, toBlock, chainId, apiToken, client, maxRequests, requestTimeoutMs });
+    return readApprovalHistory({ owner, fromBlock, toBlock, chainId, apiToken, client, maxRequests, requestTimeoutMs, grantAddress });
   }
 
   const operation = (async () => {
@@ -76,10 +77,12 @@ async function readApprovalHistory({ owner, fromBlock, toBlock, chainId = 10143,
       requests = ranges.length;
       const responses = await Promise.all(ranges.map(async ({ fromBlock, throughExclusive }) => {
         try {
+          const logFilters = [{ topics: [[approvalTopic], [toOwnerTopic(account)]] }];
+          if (grantAddress) logFilters.push({ address: [grantAddress], topics: [[...grantEventTopics], [toOwnerTopic(account)]] });
           const query = {
             fromBlock: Number(fromBlock),
             toBlock: Number(throughExclusive),
-            logs: [{ topics: [[approvalTopic], [toOwnerTopic(account)]] }],
+            logs: logFilters,
             fieldSelection: { log: ["BlockNumber", "Address", "Data", "TransactionHash", "LogIndex", "Topic0", "Topic1", "Topic2", "Topic3"] },
             joinMode: JoinMode.JoinNothing,
           };

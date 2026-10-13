@@ -219,6 +219,7 @@ export async function scanRpcRange({
   hypersyncRequests = 0,
   cacheHit = false,
   concurrency = 1,
+  extraLogTopics = [],
 }) {
   if (fromBlock === undefined) throw new TypeError("fromBlock is required when using the RPC log source");
   const account = getAddress(owner);
@@ -230,6 +231,8 @@ export async function scanRpcRange({
   if (!Number.isInteger(concurrency) || concurrency < 1) throw new RangeError("concurrency must be a positive integer");
 
   const ownerTopic = toOwnerTopic(account);
+  const topicZero = extraLogTopics.length ? [approvalTopic, ...extraLogTopics] : approvalTopic;
+  const grantLogs = [];
   const chunks = [];
   for (let from = start; from <= end; from += size) {
     chunks.push({ fromBlock: from, throughBlock: from + size - 1n > end ? end : from + size - 1n });
@@ -240,7 +243,7 @@ export async function scanRpcRange({
       try {
         const logs = await client.request({
           method: "eth_getLogs",
-          params: [{ topics: [approvalTopic, ownerTopic], fromBlock: toHex(fromBlock), toBlock: toHex(throughBlock) }],
+          params: [{ topics: [topicZero, ownerTopic], fromBlock: toHex(fromBlock), toBlock: toHex(throughBlock) }],
         });
         return { fromBlock, throughBlock, logs };
       } catch (error) {
@@ -257,13 +260,14 @@ export async function scanRpcRange({
         });
       } else {
         accumulator.addMany(result.logs);
+        if (extraLogTopics.length) grantLogs.push(...result.logs);
         coveredRanges.push({ fromBlock: result.fromBlock, throughBlock: result.throughBlock });
       }
     }
     if (results.some(({ error }) => error)) break;
   }
 
-  return finalizeDiscovery({
+  const result = await finalizeDiscovery({
     owner: account,
     requestedFromBlock,
     requestedToBlock,
@@ -277,4 +281,5 @@ export async function scanRpcRange({
     hypersyncRequests,
     cacheHit,
   });
+  return { ...result, grantLogs };
 }

@@ -1,6 +1,7 @@
 import 'server-only'
 import { getAddress, isAddress } from 'viem'
 import seedManifest from '../../../deployments/monad-testnet.json'
+import grantManifest from '../../../deployments/monad-testnet-grants.json'
 import { createDefaultPublicClient } from '../../../src/discovery-core.mjs'
 import { monadMainnet, monadTestnet } from '../../../src/chain.mjs'
 import { discover } from '../../../src/server/index.mjs'
@@ -12,6 +13,7 @@ export const dynamic = 'force-dynamic'
 
 const requestsPerMinute = createIpRateLimiter({ limit: 10, windowMs: 60_000 })
 const maxUint256 = (1n << 256n) - 1n
+type DiscoveryApproval = { token: string; spender: string; allowance: string }
 const symbolAbi = [{ type: 'function', name: 'symbol', stateMutability: 'view', inputs: [], outputs: [{ type: 'string' }] }] as const
 const decimalsAbi = [{ type: 'function', name: 'decimals', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint8' }] }] as const
 
@@ -76,9 +78,9 @@ export async function GET(request: Request) {
   const owner = getAddress(rawOwner)
   const client = createDefaultPublicClient(chain)
   try {
-    const result = await discover({ owner, chain, client })
-    const metadata = await tokenMetadata(client, chain.id, result.approvals.map(approval => approval.token))
-    const approvals = result.approvals.map(approval => {
+    const result = await discover({ owner, chain, client, grantAddress: chain.id === monadTestnet.id ? grantManifest.address as `0x${string}` : undefined })
+    const metadata = await tokenMetadata(client, chain.id, result.approvals.map((approval: DiscoveryApproval) => approval.token))
+    const approvals = result.approvals.map((approval: DiscoveryApproval) => {
       const token = metadata.get(approval.token.toLowerCase()) ?? { symbol: `${approval.token.slice(0, 6)}…${approval.token.slice(-4)}`, decimals: null }
       return {
         ...approval,
@@ -94,6 +96,7 @@ export async function GET(request: Request) {
       chainId: chain.id,
       owner,
       approvals,
+      grants: result.grants,
       coverageReport: result.coverageReport,
       complete: result.complete,
       source: result.source,
