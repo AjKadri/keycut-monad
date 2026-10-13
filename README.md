@@ -46,9 +46,11 @@ The Node SDK uses Envio HyperSync on Monad Testnet to scan Approval logs from bl
 
 The project uses [viem](https://viem.sh/) for EVM clients and Foundry for Solidity builds and broadcasts. No OpenZeppelin code is included in the demo token.
 
-## Pre-existing code
+Run `npm run dev` and open `http://localhost:3000`. At the shell milestone, wallet entry and the Monad approval-card layout are in place; the live scan API and wallet revoke flow are being added next.
 
-This first Gate 0 and `discover()` milestone does not copy application source from Keycut for Tempo. The Tempo edition is a separate Colosseum entry. Any reused UI or SDK pieces will be listed here when they are added.
+## Dashboard source
+
+The Next.js app shell, fonts, CSS design system, and adapted permission-card structure are reused from Keycut for Tempo. Tempo keychain actions, demo-bank material, and TIP-1049 content are excluded. The Monad dashboard uses this SDK for ERC-20 allowance data and revocation.
 
 ## AI coding tools
 
