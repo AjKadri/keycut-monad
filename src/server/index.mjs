@@ -12,7 +12,7 @@ import { scanApprovalHistory } from "./hypersync.mjs";
 const RECENT_RPC_FALLBACK_BLOCKS = 1_000n;
 
 /**
- * @param {{ owner: `0x${string}`, fromBlock?: bigint | number | string, toBlock?: bigint | number | string, rpcFromBlock?: bigint | number | string, source?: "auto" | "rpc", chain?: import("viem").Chain, chunkSize?: bigint, client?: ReturnType<typeof createDefaultPublicClient>, hypersyncClient?: { get: (query: any) => Promise<any> }, apiToken?: string }} options
+ * @param {{ owner: `0x${string}`, fromBlock?: bigint | number | string, toBlock?: bigint | number | string, rpcFromBlock?: bigint | number | string, source?: "auto" | "rpc", chain?: import("viem").Chain, chunkSize?: bigint, client?: ReturnType<typeof createDefaultPublicClient>, hypersyncClient?: { get: (query: any) => Promise<any> }, apiToken?: string, requestTimeoutMs?: number }} options
  */
 export async function discover({
   owner,
@@ -25,6 +25,7 @@ export async function discover({
   client = createDefaultPublicClient(chain),
   hypersyncClient,
   apiToken = globalThis.process?.env?.ENVIO_API_TOKEN,
+  requestTimeoutMs,
 }) {
   if (source !== "auto" && source !== "rpc") throw new TypeError('source must be "auto" or "rpc"');
   const account = getAddress(owner);
@@ -73,6 +74,7 @@ export async function discover({
     chainId: chain.id,
     apiToken,
     client: hypersyncClient,
+    requestTimeoutMs,
   });
   const accumulator = createApprovalAccumulator(account);
   accumulator.addMany(history.logs);

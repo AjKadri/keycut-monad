@@ -102,6 +102,23 @@ test("HyperSync caps a long history scan and caches the partial result", async (
   clearHyperSyncCacheForTests();
 });
 
+test("HyperSync timeouts return honest partial coverage", async () => {
+  clearHyperSyncCacheForTests();
+  const result = await discover({
+    owner,
+    toBlock: 2_500n,
+    requestTimeoutMs: 10,
+    hypersyncClient: { get: () => new Promise(() => {}) },
+    client: publicClient(2_500),
+  });
+
+  assert.equal(result.source, "hypersync");
+  assert.equal(result.complete, false);
+  assert.match(result.coverageReport, /capped after 1 request/i);
+  assert.equal(result.approvals.length, 0);
+  clearHyperSyncCacheForTests();
+});
+
 test("HyperSync rate limits fall back to a bounded RPC scan with an honest coverage report", async () => {
   clearHyperSyncCacheForTests();
   const rpcRanges = [];

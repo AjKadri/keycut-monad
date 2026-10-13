@@ -9,6 +9,7 @@ const HYPERSYNC_URLS = new Map([
 const CACHE_TTL_MS = 3 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 128;
 const DEFAULT_MAX_REQUESTS = 2;
+const DEFAULT_REQUEST_TIMEOUT_MS = 11_000;
 const PARALLEL_RANGE_THRESHOLD = 1_000_000n;
 const historyCache = new Map();
 const inFlight = new Map();
@@ -38,7 +39,7 @@ function pruneCache(now) {
   while (historyCache.size > MAX_CACHE_ENTRIES) historyCache.delete(historyCache.keys().next().value);
 }
 
-async function readApprovalHistory({ owner, fromBlock, toBlock, chainId = 10143, apiToken, client, maxRequests = DEFAULT_MAX_REQUESTS }) {
+async function readApprovalHistory({ owner, fromBlock, toBlock, chainId = 10143, apiToken, client, maxRequests = DEFAULT_MAX_REQUESTS, requestTimeoutMs = DEFAULT_REQUEST_TIMEOUT_MS }) {
   const account = getAddress(owner);
   const start = BigInt(fromBlock);
   const exclusiveEnd = BigInt(toBlock) + 1n;
@@ -50,7 +51,7 @@ async function readApprovalHistory({ owner, fromBlock, toBlock, chainId = 10143,
   const pending = inFlight.get(key);
   if (pending) {
     await pending;
-    return readApprovalHistory({ owner, fromBlock, toBlock, chainId, apiToken, client, maxRequests });
+    return readApprovalHistory({ owner, fromBlock, toBlock, chainId, apiToken, client, maxRequests, requestTimeoutMs });
   }
 
   const operation = (async () => {
@@ -75,18 +76,26 @@ async function readApprovalHistory({ owner, fromBlock, toBlock, chainId = 10143,
       requests = ranges.length;
       const responses = await Promise.all(ranges.map(async ({ fromBlock, throughExclusive }) => {
         try {
-          const response = await hypersync.get({
+          const query = {
             fromBlock: Number(fromBlock),
             toBlock: Number(throughExclusive),
             logs: [{ topics: [[approvalTopic], [toOwnerTopic(account)]] }],
             fieldSelection: { log: ["BlockNumber", "Address", "Data", "TransactionHash", "LogIndex", "Topic0", "Topic1", "Topic2", "Topic3"] },
             joinMode: JoinMode.JoinNothing,
-          });
+          };
+          let timeout;
+          const response = await Promise.race([
+            hypersync.get(query),
+            new Promise((_, reject) => {
+              timeout = setTimeout(() => reject(Object.assign(new Error(`HyperSync request exceeded ${requestTimeoutMs} ms`), { code: "HYPERSYNC_TIMEOUT" })), requestTimeoutMs);
+              timeout.unref?.();
+            }),
+          ]).finally(() => clearTimeout(timeout));
           const next = BigInt(response.nextBlock);
           if (next <= fromBlock) throw new Error(`HyperSync made no progress from block ${fromBlock}`);
           return { fromBlock, throughExclusive, next: next < throughExclusive ? next : throughExclusive, logs: response.data.logs, capped: next < throughExclusive };
         } catch (error) {
-          return { fromBlock, throughExclusive, error, rateLimited: isRateLimitError(error) };
+          return { fromBlock, throughExclusive, error: error?.code === "HYPERSYNC_TIMEOUT" ? null : error, rateLimited: isRateLimitError(error), capped: error?.code === "HYPERSYNC_TIMEOUT" };
         }
       }));
       entry.logs = responses.flatMap((response) => response.logs ?? []);
