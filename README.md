@@ -107,7 +107,7 @@ All links below are Monad Testnet links. The final reseed is the active state ju
 - [KUSD deployment](https://testnet.monadscan.com/tx/0x1bd4c9dd48abc2a879bec68519476c6cd77e63569e1a6944acc0e3ecd926511f)
 - [KEUR deployment](https://testnet.monadscan.com/tx/0x3c6afd12ac220dce28c53801468fbd5b701dc4c0f37f14c4b8e517ab596b7fed)
 - [Final fresh KUSD to Alpha approval](https://testnet.monadscan.com/tx/0x5e269c7d2a159620a43da9e847344f6cdb03d35be4b374e8d87dad157028b057)
-- [Active KUSD to Bravo approval](https://testnet.monadscan.com/tx/0x758396ee377efa679731cf29249129bffb3fefb85c1dc8013744f4f140ff36f9)
+- [Recording-cycle KUSD to Bravo approval, later revoked](https://testnet.monadscan.com/tx/0x758396ee377efa679731cf29249129bffb3fefb85c1dc8013744f4f140ff36f9)
 - [Active KEUR to Charlie approval](https://testnet.monadscan.com/tx/0x45b54959912520999e9aaaa513fc4f258e68ee659fff3b6681390b6e2943561a)
 - [KeycutGrants deployment](https://testnet.monadscan.com/tx/0x85e0f389403b9bcef79f5bdadc23c5e7c2ce78d111e41a06008fb2669816f0f9)
 - [Final agent funding](https://testnet.monadscan.com/tx/0x6c5cb3aa04fa621c17ee2b78ba952dbccf7a6e1effd4b0082a46b9ec963f2b3b)
@@ -120,7 +120,7 @@ The clean recording cycle used fresh approvals [Alpha](https://testnet.monadscan
 
 Earlier grant-seed receipts remain linked for reproducibility: [initial funding](https://testnet.monadscan.com/tx/0x85a55901234e170cadc7bf12476700400c0e7aab276dcce79830e1999d6c0736), [initial approval](https://testnet.monadscan.com/tx/0x29af20ae86402038957eb96bad6e6427752cf828b65362da1035133f6c76dfe1), [initial grant](https://testnet.monadscan.com/tx/0xa61e0c80d32e0d3537f626cb94b288870894826ada92f1e3d3d32506da672174), [initial pay](https://testnet.monadscan.com/tx/0xb58a43ea3ccc2477683b98d6991b181fe250d819200e7cf5d5dee1f666857de0), [initial over-cap](https://testnet.monadscan.com/tx/0xbd1baa40ca9b9cbc3e77afe30626af20e706034b38c62cc3b3a85700f66199fb), [recording-cycle funding](https://testnet.monadscan.com/tx/0xf39bb7b3efaac74fadaa8d86c933c795fff17768111ebed8c8497e774c805dcf), [recording-cycle approval](https://testnet.monadscan.com/tx/0xb7b77dd6bd88264f93b246411db57c9358c51e663c5cf48576fb21dd5a4169f7), [recording-cycle grant](https://testnet.monadscan.com/tx/0x0977b8ebeb40140875d7eccfa3f7d00878da1fb172d05766fb1fb8e72ecc1ba8), [recording-cycle pay](https://testnet.monadscan.com/tx/0x92c103adea70a1920e7e744510bde2edd284885f46cafed4f9b6214fab35a812), and [recording-cycle over-cap](https://testnet.monadscan.com/tx/0xb9a551af00cec2c05d875544d1c1919d9c5b9ba72c3f9e94a3b9f80af2ff7560).
 
-After the video, the final reseed left active Alpha, Bravo, and Charlie approvals plus the active demo grant. The final demo grant is active at cap 50 KUSD with 10 KUSD spent. The verifier’s post-revoke payment check uses the isolated Foundry simulation `testPayAfterRevokeReverts`; it does not revoke the live final grant.
+After the video, the final reseed left a fresh active Alpha approval, the recording-cycle Charlie approval, and the active demo grant. Bravo remains revoked from the recording. The final demo grant is active at cap 50 KUSD with 10 KUSD spent. The verifier’s post-revoke payment check uses the isolated Foundry simulation `testPayAfterRevokeReverts`; it does not revoke the live final grant.
 
 ## Links
 
