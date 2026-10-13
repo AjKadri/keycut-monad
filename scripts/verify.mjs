@@ -93,6 +93,15 @@ await check("discovery no longer lists revoked approvals", () => {
   return `${revokedKeys.length} zero-allowance approvals omitted`;
 });
 
+const bravoApproval = requireSeed(bravo, "Demo spender Bravo");
+await check("KUSD -> Bravo remains active for the demo", async () => {
+  const state = await verify(owner, bravoApproval.token, bravoApproval.spender, { publicClient: testnetClient });
+  assert.equal(state.allowance, "350000000000000000000");
+  assert.equal(state.isRevoked, false);
+  assert.equal(actualActive.has(pairKey(bravoApproval.token, bravoApproval.spender)), true);
+  return "350 KUSD";
+});
+
 await check(`empty wallet returns 0 approvals within ${emptyLimitMs / 1000} seconds`, async () => {
   const started = performance.now();
   const result = await discover({ owner: emptyOwner, chain: monadMainnet, client: mainnetClient });
@@ -102,12 +111,12 @@ await check(`empty wallet returns 0 approvals within ${emptyLimitMs / 1000} seco
   return `${ms} ms, ${result.coverageReport}`;
 });
 
-const browserApproval = requireSeed(bravo, "Demo spender Bravo");
-await check(`KUSD -> Bravo revoke via browser wallet reads 0 onchain (tx ${browserRevokeHash})`, async () => {
+const browserApproval = requireSeed(alpha, "Demo spender Alpha");
+await check(`KUSD -> Alpha revoke via browser wallet reads 0 onchain (tx ${browserRevokeHash})`, async () => {
   const receipt = await testnetClient.getTransactionReceipt({ hash: browserRevokeHash });
   assert.equal(receipt.status, "success");
   const receiptSpender = receiptApproval(receipt, browserApproval.token);
-  assert.equal(receiptSpender, getAddress(browserApproval.spender), `receipt targets ${receiptSpender}, but Bravo is ${getAddress(browserApproval.spender)}`);
+  assert.equal(receiptSpender, getAddress(browserApproval.spender), `receipt targets ${receiptSpender}, but Alpha is ${getAddress(browserApproval.spender)}`);
   const state = await verify(owner, browserApproval.token, browserApproval.spender, { publicClient: testnetClient });
   assert.deepEqual(state, { allowance: "0", isRevoked: true });
 });

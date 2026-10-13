@@ -1,3 +1,9 @@
+export function getClientIp(request) {
+  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || request.headers.get("x-real-ip")?.trim()
+    || "unknown";
+}
+
 export function createIpRateLimiter({ limit = 10, windowMs = 60_000, maxKeys = 2_048, now = Date.now } = {}) {
   const windows = new Map();
   return (ip) => {

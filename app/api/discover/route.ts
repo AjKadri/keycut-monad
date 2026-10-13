@@ -4,9 +4,10 @@ import seedManifest from '../../../deployments/monad-testnet.json'
 import { createDefaultPublicClient } from '../../../src/discovery-core.mjs'
 import { monadMainnet, monadTestnet } from '../../../src/chain.mjs'
 import { discover } from '../../../src/server/index.mjs'
-import { createIpRateLimiter } from '../../../src/server/rate-limit.mjs'
+import { createIpRateLimiter, getClientIp } from '../../../src/server/rate-limit.mjs'
 
 export const runtime = 'nodejs'
+export const maxDuration = 60
 export const dynamic = 'force-dynamic'
 
 const requestsPerMinute = createIpRateLimiter({ limit: 10, windowMs: 60_000 })
@@ -52,14 +53,8 @@ async function tokenMetadata(client: ReturnType<typeof createDefaultPublicClient
   return metadata
 }
 
-function clientIp(request: Request) {
-  return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-    || request.headers.get('x-real-ip')?.trim()
-    || 'unknown'
-}
-
 export async function GET(request: Request) {
-  const rate = requestsPerMinute(clientIp(request))
+  const rate = requestsPerMinute(getClientIp(request))
   if (!rate.allowed) {
     return Response.json({ error: 'Too many wallet scans. Try again shortly.' }, {
       status: 429,

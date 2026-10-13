@@ -1,6 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createIpRateLimiter } from '../src/server/rate-limit.mjs';
+import { createIpRateLimiter, getClientIp } from '../src/server/rate-limit.mjs';
+
+test('client IP prefers Vercel x-forwarded-for', () => {
+  const request = new Request('https://example.test', {
+    headers: {
+      'x-forwarded-for': '198.51.100.7, 10.0.0.1',
+      'x-real-ip': '203.0.113.9',
+    },
+  });
+  assert.equal(getClientIp(request), '198.51.100.7');
+});
 
 test('IP limiter allows the configured requests, blocks excess, then resets', () => {
   let now = 1000;
