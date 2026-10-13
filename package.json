@@ -28,6 +28,7 @@
     "record:deployments": "node scripts/record-deployments.mjs",
     "record:grant-deployment": "node scripts/record-grant-deployment.mjs",
     "seed:grant": "node scripts/seed-grant.mjs",
+    "agent:pay": "node scripts/agent-pay.mjs",
     "record:approvals": "node scripts/record-approvals.mjs",
     "discover:seed": "node examples/discover.mjs",
     "revoke:seed": "node examples/revoke-seed.mjs",
