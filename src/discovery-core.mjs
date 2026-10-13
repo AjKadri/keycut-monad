@@ -1,5 +1,5 @@
 import { createPublicClient, getAddress, http, parseAbiItem, toEventSelector, toHex } from "viem";
-import { monadTestnet } from "./chain.mjs";
+import { monadMainnet, monadTestnet } from "./chain.mjs";
 
 export const approvalTopic = toEventSelector(
   parseAbiItem("event Approval(address indexed owner, address indexed spender, uint256 value)"),
@@ -18,10 +18,17 @@ export const allowanceAbi = [
   },
 ];
 
-export const createDefaultPublicClient = () =>
+export const chainForId = (chainId) => {
+  if (chainId === monadTestnet.id) return monadTestnet;
+  if (chainId === monadMainnet.id) return monadMainnet;
+  throw new RangeError(`Unsupported Monad chain id: ${chainId}`);
+};
+
+/** @param {import("viem").Chain} [chain] */
+export const createDefaultPublicClient = (chain = monadTestnet) =>
   createPublicClient({
-    chain: monadTestnet,
-    transport: http(globalThis.process?.env?.MONAD_TESTNET_RPC_URL ?? undefined),
+    chain,
+    transport: http(globalThis.process?.env?.[chain.id === monadMainnet.id ? "MONAD_MAINNET_RPC_URL" : "MONAD_TESTNET_RPC_URL"] ?? undefined),
   });
 
 export const toOwnerTopic = (owner) => `0x${getAddress(owner).slice(2).toLowerCase().padStart(64, "0")}`;
@@ -171,7 +178,7 @@ export async function finalizeDiscovery({
 
   const complete = rangeComplete && normalizedErrors.length === 0;
   return {
-    chainId: monadTestnet.id,
+    chainId: client.chain?.id ?? monadTestnet.id,
     owner: account,
     source,
     requestedRange: { fromBlock: BigInt(requestedFromBlock).toString(), toBlock: BigInt(requestedToBlock).toString() },

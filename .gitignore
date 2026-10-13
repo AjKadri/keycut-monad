@@ -8,6 +8,7 @@ broadcast/
 .env.*
 !.env.example
 .agent/
+/AGENTS.md
 /KEYCUT_MONAD_BUILD_PLAN.md
 .DS_Store
 /spoof-scan.mjs

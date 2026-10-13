@@ -1,4 +1,5 @@
 import { getAddress } from "viem";
+import { monadTestnet } from "../chain.mjs";
 import {
   createApprovalAccumulator,
   createDefaultPublicClient,
@@ -9,14 +10,18 @@ import { scanApprovalHistory } from "./hypersync.mjs";
 
 const RECENT_RPC_FALLBACK_BLOCKS = 1_000n;
 
+/**
+ * @param {{ owner: `0x${string}`, fromBlock?: bigint | number | string, toBlock?: bigint | number | string, rpcFromBlock?: bigint | number | string, source?: "auto" | "rpc", chain?: import("viem").Chain, chunkSize?: bigint, client?: ReturnType<typeof createDefaultPublicClient>, hypersyncClient?: { get: (query: any) => Promise<any> }, apiToken?: string }} options
+ */
 export async function discover({
   owner,
   fromBlock,
   toBlock,
   rpcFromBlock,
   source = "auto",
+  chain = monadTestnet,
   chunkSize = 100n,
-  client = createDefaultPublicClient(),
+  client = createDefaultPublicClient(chain),
   hypersyncClient,
   apiToken = globalThis.process?.env?.ENVIO_API_TOKEN,
 }) {
@@ -63,6 +68,7 @@ export async function discover({
     owner: account,
     fromBlock: requestedStart,
     toBlock: end,
+    chainId: chain.id,
     apiToken,
     client: hypersyncClient,
   });

@@ -8,6 +8,7 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ['@envio-dev/hypersync-client'],
   async headers() { return [{ source: '/(.*)', headers: securityHeaders }] },
 }
 

@@ -3,6 +3,7 @@ import test from "node:test";
 import { createApprovalAccumulator, approvalTopic, toOwnerTopic } from "../src/discovery-core.mjs";
 import { discover } from "../src/server/index.mjs";
 import { clearHyperSyncCacheForTests } from "../src/server/hypersync.mjs";
+import { monadMainnet, monadTestnet } from "../src/chain.mjs";
 
 const owner = "0x0000000000000000000000000000000000000001";
 
@@ -59,6 +60,25 @@ test("HyperSync reuses a wallet's recent complete log scan", async () => {
   assert.equal(second.hypersyncRequests, 0);
   assert.equal(second.cacheHit, true);
   assert.equal(requests, 1);
+});
+
+test("HyperSync cache entries are isolated by Monad chain", async () => {
+  clearHyperSyncCacheForTests();
+  const calls = [];
+  const hypersyncClient = {
+    get: async (query) => {
+      calls.push(query.fromBlock);
+      return { nextBlock: query.toBlock, data: { logs: [] } };
+    },
+  };
+
+  const first = await discover({ owner, chain: monadTestnet, toBlock: 4n, hypersyncClient, client: publicClient(4) });
+  const second = await discover({ owner, chain: monadMainnet, toBlock: 4n, hypersyncClient, client: publicClient(4) });
+
+  assert.equal(first.hypersyncRequests, 1);
+  assert.equal(second.hypersyncRequests, 1);
+  assert.deepEqual(calls, [0, 0]);
+  clearHyperSyncCacheForTests();
 });
 
 test("HyperSync rate limits fall back to a bounded RPC scan with an honest coverage report", async () => {

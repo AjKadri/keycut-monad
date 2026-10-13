@@ -42,11 +42,13 @@ The deploy command creates new contracts every time it runs. The approval comman
 
 ## Network and dependencies
 
-The Node SDK uses Envio HyperSync on Monad Testnet to scan Approval logs from block 0 by default, then reads current allowances through one RPC multicall. It caches logs per wallet for three minutes and reuses the cache without making another HyperSync request when the chain head has not advanced. If HyperSync is unavailable or rate-limited, it scans the latest 1,000 blocks through 100-block RPC `eth_getLogs` chunks and reports the exact ranges plus any unchecked history. Use `discover({ owner, source: "rpc", fromBlock })` for a bounded RPC-only scan, or pass `rpcFromBlock` to choose the fallback start. The browser-safe entry point uses RPC and requires `fromBlock`.
+The Node SDK uses Envio HyperSync on Monad Testnet and Mainnet to scan Approval logs from block 0 by default, then reads current allowances through one RPC multicall. It caches logs by chain and wallet for three minutes and reuses the cache without another HyperSync request when the chain head has not advanced. If HyperSync is unavailable or rate-limited, it scans the latest 1,000 blocks through 100-block RPC `eth_getLogs` chunks and reports the exact ranges plus any unchecked history. Use `discover({ owner, source: "rpc", fromBlock })` for a bounded RPC-only scan, or pass `rpcFromBlock` to choose the fallback start. The browser-safe SDK entry point uses RPC and requires `fromBlock`.
 
 The project uses [viem](https://viem.sh/) for EVM clients and Foundry for Solidity builds and broadcasts. No OpenZeppelin code is included in the demo token.
 
-Run `npm run dev` and open `http://localhost:3000`. At the shell milestone, wallet entry and the Monad approval-card layout are in place; the live scan API and wallet revoke flow are being added next.
+Run `npm run dev` and open `http://localhost:3000`. Paste an address or connect a wallet to open its approval view. Server-side discovery and chain selection are live; user labels and wallet revocation are the next milestone.
+
+The `/api/discover` route keeps HyperSync credentials server-side and limits each IP to 10 scans per minute. The browser receives token and spender data, live allowances, and the SDK coverage report, never the Envio token. Mainnet discovery uses chain ID 143 and `https://rpc.monad.xyz`; the testnet uses chain ID 10143.
 
 ## Dashboard source
 

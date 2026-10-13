@@ -2,7 +2,10 @@ import { HypersyncClient, JoinMode } from "@envio-dev/hypersync-client";
 import { getAddress } from "viem";
 import { approvalTopic, toOwnerTopic } from "../discovery-core.mjs";
 
-const HYPERSYNC_URL = "https://monad-testnet.hypersync.xyz";
+const HYPERSYNC_URLS = new Map([
+  [10143, "https://monad-testnet.hypersync.xyz"],
+  [143, "https://monad.hypersync.xyz"],
+]);
 const CACHE_TTL_MS = 3 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 128;
 const historyCache = new Map();
@@ -18,12 +21,14 @@ export function isRateLimitError(error) {
   return status === 429 || /\b429\b|rate.?limit|too many requests|quota exceeded/i.test(String(error?.message ?? error));
 }
 
-function newHypersyncClient(apiToken) {
-  return new HypersyncClient({ url: HYPERSYNC_URL, apiToken, maxNumRetries: 0 });
+function newHypersyncClient(apiToken, chainId) {
+  const url = HYPERSYNC_URLS.get(chainId);
+  if (!url) throw new RangeError(`Unsupported HyperSync chain id: ${chainId}`);
+  return new HypersyncClient({ url, apiToken, maxNumRetries: 0 });
 }
 
-function makeCacheEntry(owner, start) {
-  return { owner, start, nextBlock: start, logs: [], expiresAt: 0 };
+function makeCacheEntry(owner, start, chainId) {
+  return { owner, start, chainId, nextBlock: start, logs: [], expiresAt: 0 };
 }
 
 function pruneCache(now) {
@@ -31,30 +36,30 @@ function pruneCache(now) {
   while (historyCache.size > MAX_CACHE_ENTRIES) historyCache.delete(historyCache.keys().next().value);
 }
 
-async function readApprovalHistory({ owner, fromBlock, toBlock, apiToken, client }) {
+async function readApprovalHistory({ owner, fromBlock, toBlock, chainId = 10143, apiToken, client }) {
   const account = getAddress(owner);
   const start = BigInt(fromBlock);
   const exclusiveEnd = BigInt(toBlock) + 1n;
-  const key = `${account.toLowerCase()}:${start}`;
+  const key = `${chainId}:${account.toLowerCase()}:${start}`;
   const now = Date.now();
   pruneCache(now);
 
   const pending = inFlight.get(key);
   if (pending) {
     await pending;
-    return readApprovalHistory({ owner, fromBlock, toBlock, apiToken, client });
+    return readApprovalHistory({ owner, fromBlock, toBlock, chainId, apiToken, client });
   }
 
   const operation = (async () => {
     let entry = historyCache.get(key);
-    if (!entry || entry.expiresAt <= now) entry = makeCacheEntry(account, start);
+    if (!entry || entry.expiresAt <= now) entry = makeCacheEntry(account, start, chainId);
     const isFreshHit = entry.expiresAt > now && entry.nextBlock >= exclusiveEnd;
     let requests = 0;
     let failure = null;
     let rateLimited = false;
 
     if (!isFreshHit && entry.nextBlock < exclusiveEnd) {
-      const hypersync = client ?? newHypersyncClient(apiToken);
+      const hypersync = client ?? newHypersyncClient(apiToken, chainId);
       let cursor = entry.nextBlock;
       while (cursor < exclusiveEnd) {
         try {
