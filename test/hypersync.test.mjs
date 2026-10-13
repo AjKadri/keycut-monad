@@ -81,6 +81,27 @@ test("HyperSync cache entries are isolated by Monad chain", async () => {
   clearHyperSyncCacheForTests();
 });
 
+test("HyperSync caps a long history scan and caches the partial result", async () => {
+  clearHyperSyncCacheForTests();
+  let requests = 0;
+  const hypersyncClient = {
+    get: async (query) => {
+      requests += 1;
+      return { nextBlock: 50, data: { logs: [] } };
+    },
+  };
+  const first = await discover({ owner, toBlock: 2_500n, hypersyncClient, client: publicClient(2_500) });
+  const second = await discover({ owner, toBlock: 2_500n, hypersyncClient, client: publicClient(2_500) });
+
+  assert.equal(requests, 1);
+  assert.equal(first.complete, false);
+  assert.match(first.coverageReport, /capped after 1 request/i);
+  assert.equal(first.cacheHit, false);
+  assert.equal(second.cacheHit, true);
+  assert.equal(second.hypersyncRequests, 0);
+  clearHyperSyncCacheForTests();
+});
+
 test("HyperSync rate limits fall back to a bounded RPC scan with an honest coverage report", async () => {
   clearHyperSyncCacheForTests();
   const rpcRanges = [];

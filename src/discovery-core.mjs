@@ -218,6 +218,7 @@ export async function scanRpcRange({
   fallbackReason,
   hypersyncRequests = 0,
   cacheHit = false,
+  concurrency = 1,
 }) {
   if (fromBlock === undefined) throw new TypeError("fromBlock is required when using the RPC log source");
   const account = getAddress(owner);
@@ -226,26 +227,40 @@ export async function scanRpcRange({
   const size = BigInt(chunkSize);
   if (start < 0n || end < start) throw new RangeError("Invalid block range");
   if (size < 1n) throw new RangeError("chunkSize must be positive");
+  if (!Number.isInteger(concurrency) || concurrency < 1) throw new RangeError("concurrency must be a positive integer");
 
   const ownerTopic = toOwnerTopic(account);
+  const chunks = [];
   for (let from = start; from <= end; from += size) {
-    const through = from + size - 1n > end ? end : from + size - 1n;
-    try {
-      const logs = await client.request({
-        method: "eth_getLogs",
-        params: [{ topics: [approvalTopic, ownerTopic], fromBlock: toHex(from), toBlock: toHex(through) }],
-      });
-      accumulator.addMany(logs);
-      coveredRanges.push({ fromBlock: from, throughBlock: through });
-    } catch (error) {
-      errors.push({
-        stage: "logs",
-        fromBlock: from.toString(),
-        toBlock: through.toString(),
-        message: error.shortMessage ?? error.message,
-      });
-      break;
+    chunks.push({ fromBlock: from, throughBlock: from + size - 1n > end ? end : from + size - 1n });
+  }
+  for (let index = 0; index < chunks.length; index += concurrency) {
+    const batch = chunks.slice(index, index + concurrency);
+    const results = await Promise.all(batch.map(async ({ fromBlock, throughBlock }) => {
+      try {
+        const logs = await client.request({
+          method: "eth_getLogs",
+          params: [{ topics: [approvalTopic, ownerTopic], fromBlock: toHex(fromBlock), toBlock: toHex(throughBlock) }],
+        });
+        return { fromBlock, throughBlock, logs };
+      } catch (error) {
+        return { fromBlock, throughBlock, error };
+      }
+    }));
+    for (const result of results) {
+      if (result.error) {
+        errors.push({
+          stage: "logs",
+          fromBlock: result.fromBlock.toString(),
+          toBlock: result.throughBlock.toString(),
+          message: result.error.shortMessage ?? result.error.message,
+        });
+      } else {
+        accumulator.addMany(result.logs);
+        coveredRanges.push({ fromBlock: result.fromBlock, throughBlock: result.throughBlock });
+      }
     }
+    if (results.some(({ error }) => error)) break;
   }
 
   return finalizeDiscovery({

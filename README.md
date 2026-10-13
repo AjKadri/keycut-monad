@@ -42,7 +42,7 @@ The deploy command creates new contracts every time it runs. The approval comman
 
 ## Network and dependencies
 
-The Node SDK uses Envio HyperSync on Monad Testnet and Mainnet to scan Approval logs from block 0 by default, then reads current allowances through one RPC multicall. It caches logs by chain and wallet for three minutes and reuses the cache without another HyperSync request when the chain head has not advanced. If HyperSync is unavailable or rate-limited, it scans the latest 1,000 blocks through 100-block RPC `eth_getLogs` chunks and reports the exact ranges plus any unchecked history. Use `discover({ owner, source: "rpc", fromBlock })` for a bounded RPC-only scan, or pass `rpcFromBlock` to choose the fallback start. The browser-safe SDK entry point uses RPC and requires `fromBlock`.
+The Node SDK uses Envio HyperSync on Monad Testnet and Mainnet to scan Approval logs from block 0 by default, then reads current allowances through one RPC multicall. Each scan uses up to two parallel bounded HyperSync ranges, caches the result by chain and wallet for three minutes, and returns an honest partial-coverage report when HyperSync caps a long history. If HyperSync is unavailable or rate-limited, it scans the latest 1,000 blocks through 100-block RPC `eth_getLogs` chunks and reports the exact ranges plus any unchecked history. Use `discover({ owner, source: "rpc", fromBlock })` for a bounded RPC-only scan, or pass `rpcFromBlock` to choose the fallback start. The browser-safe SDK entry point uses RPC and requires `fromBlock`.
 
 The project uses [viem](https://viem.sh/) for EVM clients and Foundry for Solidity builds and broadcasts. No OpenZeppelin code is included in the demo token.
 

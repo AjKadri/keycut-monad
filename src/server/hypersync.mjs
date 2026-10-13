@@ -8,6 +8,8 @@ const HYPERSYNC_URLS = new Map([
 ]);
 const CACHE_TTL_MS = 3 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 128;
+const DEFAULT_MAX_REQUESTS = 2;
+const PARALLEL_RANGE_THRESHOLD = 1_000_000n;
 const historyCache = new Map();
 const inFlight = new Map();
 
@@ -28,7 +30,7 @@ function newHypersyncClient(apiToken, chainId) {
 }
 
 function makeCacheEntry(owner, start, chainId) {
-  return { owner, start, chainId, nextBlock: start, logs: [], expiresAt: 0 };
+  return { owner, start, chainId, logs: [], coveredRanges: [], expiresAt: 0, failure: null, rateLimited: false, capped: false, maxRequests: 1 };
 }
 
 function pruneCache(now) {
@@ -36,56 +38,70 @@ function pruneCache(now) {
   while (historyCache.size > MAX_CACHE_ENTRIES) historyCache.delete(historyCache.keys().next().value);
 }
 
-async function readApprovalHistory({ owner, fromBlock, toBlock, chainId = 10143, apiToken, client }) {
+async function readApprovalHistory({ owner, fromBlock, toBlock, chainId = 10143, apiToken, client, maxRequests = DEFAULT_MAX_REQUESTS }) {
   const account = getAddress(owner);
   const start = BigInt(fromBlock);
   const exclusiveEnd = BigInt(toBlock) + 1n;
   const key = `${chainId}:${account.toLowerCase()}:${start}`;
   const now = Date.now();
   pruneCache(now);
+  if (!Number.isInteger(maxRequests) || maxRequests < 1) throw new RangeError("maxRequests must be a positive integer");
 
   const pending = inFlight.get(key);
   if (pending) {
     await pending;
-    return readApprovalHistory({ owner, fromBlock, toBlock, chainId, apiToken, client });
+    return readApprovalHistory({ owner, fromBlock, toBlock, chainId, apiToken, client, maxRequests });
   }
 
   const operation = (async () => {
     let entry = historyCache.get(key);
     if (!entry || entry.expiresAt <= now) entry = makeCacheEntry(account, start, chainId);
-    const isFreshHit = entry.expiresAt > now && entry.nextBlock >= exclusiveEnd;
+    const isFreshHit = entry.expiresAt > now;
     let requests = 0;
-    let failure = null;
-    let rateLimited = false;
+    let failure = entry.failure;
+    let rateLimited = entry.rateLimited;
+    let capped = entry.capped;
+    let requestLimit = entry.maxRequests;
 
-    if (!isFreshHit && entry.nextBlock < exclusiveEnd) {
+    if (!isFreshHit) {
       const hypersync = client ?? newHypersyncClient(apiToken, chainId);
-      let cursor = entry.nextBlock;
-      while (cursor < exclusiveEnd) {
+      const span = exclusiveEnd - start;
+      requestLimit = span > PARALLEL_RANGE_THRESHOLD ? Math.min(maxRequests, Number(span)) : 1;
+      const step = (span + BigInt(requestLimit) - 1n) / BigInt(requestLimit);
+      const ranges = [];
+      for (let from = start; from < exclusiveEnd; from += step) {
+        ranges.push({ fromBlock: from, throughExclusive: from + step < exclusiveEnd ? from + step : exclusiveEnd });
+      }
+      requests = ranges.length;
+      const responses = await Promise.all(ranges.map(async ({ fromBlock, throughExclusive }) => {
         try {
-          requests += 1;
           const response = await hypersync.get({
-            fromBlock: Number(cursor),
-            toBlock: Number(exclusiveEnd),
+            fromBlock: Number(fromBlock),
+            toBlock: Number(throughExclusive),
             logs: [{ topics: [[approvalTopic], [toOwnerTopic(account)]] }],
             fieldSelection: { log: ["BlockNumber", "Address", "Data", "TransactionHash", "LogIndex", "Topic0", "Topic1", "Topic2", "Topic3"] },
             joinMode: JoinMode.JoinNothing,
           });
-          entry.logs.push(...response.data.logs);
           const next = BigInt(response.nextBlock);
-          if (next <= cursor) throw new Error(`HyperSync made no progress from block ${cursor}`);
-          cursor = next < exclusiveEnd ? next : exclusiveEnd;
-          entry.nextBlock = cursor;
+          if (next <= fromBlock) throw new Error(`HyperSync made no progress from block ${fromBlock}`);
+          return { fromBlock, throughExclusive, next: next < throughExclusive ? next : throughExclusive, logs: response.data.logs, capped: next < throughExclusive };
         } catch (error) {
-          rateLimited = isRateLimitError(error);
-          failure = cleanError(error, apiToken);
-          break;
+          return { fromBlock, throughExclusive, error, rateLimited: isRateLimitError(error) };
         }
-      }
+      }));
+      entry.logs = responses.flatMap((response) => response.logs ?? []);
+      entry.coveredRanges = responses
+        .filter((response) => response.next > response.fromBlock)
+        .map((response) => ({ fromBlock: response.fromBlock.toString(), throughBlock: (response.next - 1n).toString() }));
+      const failed = responses.find((response) => response.error);
+      failure = failed ? cleanError(failed.error, apiToken) : null;
+      rateLimited = responses.some((response) => response.rateLimited);
+      capped = responses.some((response) => response.capped);
+      entry.failure = failure;
+      entry.rateLimited = rateLimited;
+      entry.capped = capped;
+      entry.maxRequests = requestLimit;
     }
-
-    const coveredThrough = entry.nextBlock > start ? (entry.nextBlock < exclusiveEnd ? entry.nextBlock - 1n : exclusiveEnd - 1n) : start - 1n;
-    const coveredRanges = coveredThrough >= start ? [{ fromBlock: start.toString(), throughBlock: coveredThrough.toString() }] : [];
     const fresh = requests > 0 || isFreshHit;
     if (fresh) {
       entry.expiresAt = Date.now() + CACHE_TTL_MS;
@@ -95,11 +111,19 @@ async function readApprovalHistory({ owner, fromBlock, toBlock, chainId = 10143,
 
     return {
       logs: entry.logs.filter((log) => log.blockNumber === undefined || BigInt(log.blockNumber) <= BigInt(toBlock)),
-      coveredRanges,
+      coveredRanges: entry.coveredRanges
+        .map(({ fromBlock, throughBlock }) => ({ fromBlock: BigInt(fromBlock), throughBlock: BigInt(throughBlock) }))
+        .map(({ fromBlock, throughBlock }) => ({
+          fromBlock: fromBlock < start ? start.toString() : fromBlock.toString(),
+          throughBlock: throughBlock >= exclusiveEnd ? (exclusiveEnd - 1n).toString() : throughBlock.toString(),
+        }))
+        .filter(({ throughBlock, fromBlock }) => BigInt(throughBlock) >= BigInt(fromBlock)),
       requests,
       cacheHit: isFreshHit,
       failure,
       rateLimited,
+      capped,
+      maxRequests: requestLimit,
     };
   })();
 
