@@ -49,6 +49,12 @@ export async function revoke(token, spender, { walletClient, account } = {}) {
   });
 }
 
+/**
+ * @param {string} owner
+ * @param {string} token
+ * @param {string} spender
+ * @param {{ publicClient?: import("viem").PublicClient }} [options]
+ */
 export async function verify(owner, token, spender, { publicClient = defaultPublicClient() } = {}) {
   const allowance = await publicClient.readContract({
     address: getAddress(token),
