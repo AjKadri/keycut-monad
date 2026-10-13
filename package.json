@@ -1,0 +1,19 @@
+{
+  "name": "keycut-monad",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:contracts": "forge build",
+    "simulate:testnet": "node scripts/run-forge.mjs simulate-deploy",
+    "deploy:testnet": "node scripts/run-forge.mjs deploy",
+    "simulate:approvals": "node scripts/run-forge.mjs simulate-approve",
+    "approve:testnet": "node scripts/run-forge.mjs approve",
+    "record:deployments": "node scripts/record-deployments.mjs",
+    "record:approvals": "node scripts/record-approvals.mjs",
+    "discover:seed": "node examples/discover.mjs",
+    "explorer-links": "node scripts/print-explorer-links.mjs"
+  },
+  "dependencies": {
+    "viem": "^2.57.5"
+  }
+}

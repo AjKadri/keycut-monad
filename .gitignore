@@ -1,0 +1,12 @@
+node_modules/
+out/
+cache/
+broadcast/
+.env
+.env.*
+!.env.example
+.agent/
+/KEYCUT_MONAD_BUILD_PLAN.md
+.DS_Store
+/spoof-scan.mjs
+/spoof-scan-v2.mjs

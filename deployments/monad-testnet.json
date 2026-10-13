@@ -1,0 +1,50 @@
+{
+  "chainId": 10143,
+  "owner": "0x5E9bbd8Ba62bB50e82E9153A3999C6e358E7A748",
+  "scanFromBlock": "70696466",
+  "tokens": [
+    {
+      "name": "Keycut Demo Dollar",
+      "symbol": "KUSD",
+      "address": "0xA6533b67365CE20F1Bf340dc6eEa7aEf9df1C430",
+      "transactionHash": "0x1bd4c9dd48abc2a879bec68519476c6cd77e63569e1a6944acc0e3ecd926511f",
+      "blockNumber": "70696466"
+    },
+    {
+      "name": "Keycut Demo Euro",
+      "symbol": "KEUR",
+      "address": "0x1B5A6FfEEC742f47Baf08327cFfEd7a80C5DAcf0",
+      "transactionHash": "0x3c6afd12ac220dce28c53801468fbd5b701dc4c0f37f14c4b8e517ab596b7fed",
+      "blockNumber": "70696474"
+    }
+  ],
+  "approvals": [
+    {
+      "token": "0xA6533b67365CE20F1Bf340dc6eEa7aEf9df1C430",
+      "tokenSymbol": "KUSD",
+      "spender": "0xa44450c1660A9600336E3581EBF489a3562748c6",
+      "label": "Demo spender Alpha",
+      "allowance": "1000000000000000000000",
+      "transactionHash": "0x73468e076903db2ab8ed5b344545bfe11ae9baae357a83ab3ca41cac6633689e",
+      "blockNumber": "70696768"
+    },
+    {
+      "token": "0xA6533b67365CE20F1Bf340dc6eEa7aEf9df1C430",
+      "tokenSymbol": "KUSD",
+      "spender": "0x7148acaE93F8CfB377E714FdE4139D4616f0EDCe",
+      "label": "Demo spender Bravo",
+      "allowance": "350000000000000000000",
+      "transactionHash": "0x5decf6d199871276930cb9a4bf7ecd82a0a1f0e4bd18a9e9a8b03895cc8a0cf9",
+      "blockNumber": "70696771"
+    },
+    {
+      "token": "0x1B5A6FfEEC742f47Baf08327cFfEd7a80C5DAcf0",
+      "tokenSymbol": "KEUR",
+      "spender": "0x0f8598Dce6BA9ad5DEee6B2fbfbA5389d68C94A9",
+      "label": "Demo spender Charlie",
+      "allowance": "75000000000000000000",
+      "transactionHash": "0x64ec075485eb531cce8c7a43112c0e060b7021137d1647f7d1feb7316ce3a3cc",
+      "blockNumber": "70696773"
+    }
+  ]
+}
