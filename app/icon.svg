@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <clipPath id="left"><polygon points="0,0 40,0 34,64 0,64" /></clipPath>
+    <clipPath id="right"><polygon points="45.5,0 64,0 64,64 39.5,64" /></clipPath>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="#0F766E" />
+  <g fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round">
+    <g clip-path="url(#left)">
+      <circle cx="18" cy="31" r="9" />
+      <path d="M27 31H44" />
+    </g>
+    <g clip-path="url(#right)">
+      <g transform="translate(2 5) rotate(5 42 31)">
+        <path d="M32 31H54M47 31v8M53 31v6" />
+      </g>
+    </g>
+  </g>
+  <path d="M43.6 15 38.4 49" stroke="#FF6B4A" stroke-width="3.2" stroke-linecap="round" />
+</svg>

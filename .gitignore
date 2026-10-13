@@ -13,3 +13,4 @@ broadcast/
 .DS_Store
 /spoof-scan.mjs
 /spoof-scan-v2.mjs
+.vercel/
