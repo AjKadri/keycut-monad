@@ -33,10 +33,12 @@ npm run approve:testnet
 npm run record:approvals
 npm run discover:seed
 npm run revoke:seed
+npm test
 npm run explorer-links
 ```
 
 The deploy command creates new contracts every time it runs. The approval command broadcasts three testnet transactions. The private key stays in `.env.local`, which Git ignores.
+`npm test` includes a read-only Monad Testnet integration check and expects the committed seed tokens plus the revoked KEUR → Charlie state.
 
 ## Network and dependencies
 

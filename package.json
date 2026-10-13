@@ -6,6 +6,7 @@
     ".": "./src/index.mjs"
   },
   "scripts": {
+    "test": "node --test",
     "build:contracts": "forge build",
     "simulate:testnet": "node scripts/run-forge.mjs simulate-deploy",
     "deploy:testnet": "node scripts/run-forge.mjs deploy",
