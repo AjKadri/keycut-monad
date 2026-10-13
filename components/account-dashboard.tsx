@@ -3,15 +3,19 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createPublicClient, createWalletClient, custom, getAddress, http } from 'viem'
 import { ApprovalCard, type ApprovalCardData } from './approval-card'
+import { GrantCard, type GrantCardData } from './grant-card'
 import { useWallet } from './wallet-context'
 import { monadMainnet, monadTestnet } from '../src/chain.mjs'
-import { revoke, verify } from '../src/permissions.mjs'
+import { revoke, revokeGrant, verify } from '../src/permissions.mjs'
+import grantManifest from '../deployments/monad-testnet-grants.json'
+import { grantReadAbi } from '../src/grants.mjs'
 
 type DiscoveryResponse = {
   chain: 'testnet' | 'mainnet'
   chainId: number
   owner: string
   approvals: ApprovalCardData[]
+  grants: GrantCardData[]
   coverageReport: string
   complete: boolean
   source: string
@@ -33,6 +37,7 @@ export function AccountDashboard({ chain, address }: { chain: 'testnet' | 'mainn
   const [busyKey, setBusyKey] = useState('')
   const [busyText, setBusyText] = useState('')
   const [revokedCards, setRevokedCards] = useState<Record<string, { approval: ApprovalCardData; hash: `0x${string}`; explorerUrl: string }>>({})
+  const [revokedGrants, setRevokedGrants] = useState<Record<string, { grant: GrantCardData; hash: `0x${string}`; explorerUrl: string }>>({})
   const isOwnerConnected = Boolean(data && wallet.address && wallet.address.toLowerCase() === data.owner.toLowerCase())
   const isOnSelectedChain = Boolean(data && wallet.chainId === data.chainId)
   const canRevoke = isOwnerConnected && isOnSelectedChain
@@ -114,6 +119,40 @@ export function AccountDashboard({ chain, address }: { chain: 'testnet' | 'mainn
     }
   }
 
+  async function revokeGrantPermission(grant: GrantCardData) {
+    const owner = wallet.address
+    const provider = window.ethereum
+    const identity = `grant:${grant.agent.toLowerCase()}:${grant.token.toLowerCase()}`
+    if (!owner || !provider || !canRevoke) return
+    setActionError('')
+    setBusyKey(identity)
+    setBusyText('Confirm in MetaMask…')
+    try {
+      const currentChain = await provider.request({ method: 'eth_chainId' }) as string
+      if (Number.parseInt(currentChain, 16) !== chainConfig.id) throw new Error(`Switch MetaMask to Monad ${chain === 'testnet' ? 'Testnet' : 'Mainnet'} before revoking.`)
+      const account = getAddress(owner)
+      const publicClient = createPublicClient({ chain: chainConfig, transport: http() })
+      const walletClient = createWalletClient({ account, chain: chainConfig, transport: custom(provider as never) })
+      const grantAddress = getAddress(grantManifest.address) as `0x${string}`
+      const hash = await revokeGrant(grant.agent, grant.token, { grantAddress, walletClient, account })
+      setBusyText('Waiting for receipt…')
+      await publicClient.waitForTransactionReceipt({ hash })
+      setBusyText('Verifying grant…')
+      const state = await publicClient.readContract({ address: grantAddress, abi: grantReadAbi, functionName: 'getGrant', args: [account, grant.agent, grant.token] }) as unknown
+      const active = Array.isArray(state) ? Boolean(state[3]) : Boolean((state as { active: boolean }).active)
+      if (active) throw new Error('Transaction confirmed, but the grant is still active.')
+      setRevokedGrants(current => ({
+        ...current,
+        [identity]: { grant, hash, explorerUrl: `${chainConfig.blockExplorers.default.url}/tx/${hash}` },
+      }))
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : 'The grant could not be revoked and verified.')
+    } finally {
+      setBusyKey('')
+      setBusyText('')
+    }
+  }
+
   const activeApprovals = data?.approvals ?? []
   const activeKeys = new Set(activeApprovals.map(approval => `${approval.token.toLowerCase()}:${approval.spender.toLowerCase()}`))
   const visibleApprovals = [
@@ -122,7 +161,15 @@ export function AccountDashboard({ chain, address }: { chain: 'testnet' | 'mainn
       .filter(([identity]) => !activeKeys.has(identity))
       .map(([identity, record]) => ({ ...record.approval, userLabel: labels[record.approval.spender.toLowerCase()] ?? null, identity })),
   ]
+  const activeGrants = data?.grants?.filter(grant => grant.active) ?? []
+  const visibleGrants = [
+    ...activeGrants.map(grant => ({ ...grant, userLabel: labels[grant.agent.toLowerCase()] ?? null })),
+    ...Object.entries(revokedGrants)
+      .filter(([identity]) => !activeGrants.some(grant => `grant:${grant.agent.toLowerCase()}:${grant.token.toLowerCase()}` === identity))
+      .map(([identity, record]) => ({ ...record.grant, userLabel: labels[record.grant.agent.toLowerCase()] ?? null, identity })),
+  ]
   const activeCount = activeApprovals.filter(approval => !revokedCards[`${approval.token.toLowerCase()}:${approval.spender.toLowerCase()}`]).length
+  const activeGrantCount = activeGrants.filter(grant => !revokedGrants[`grant:${grant.agent.toLowerCase()}:${grant.token.toLowerCase()}`]).length
 
   return <main className="wrap acct">
     <p className="eyebrow">Monad {chain === 'testnet' ? 'Testnet' : 'Mainnet'} · Approval review</p>
@@ -141,12 +188,12 @@ export function AccountDashboard({ chain, address }: { chain: 'testnet' | 'mainn
     {actionError && <section className="state-panel partial" role="alert"><p>{actionError}</p></section>}
     {data && !loading && <>
       <section className={`state-panel${data.complete ? '' : ' partial'}`} aria-live="polite">
-        <div className="ledger-head"><span>{activeCount} active {activeCount === 1 ? 'approval' : 'approvals'}</span><span>{data.complete ? 'Covered' : 'Partial coverage'}</span></div>
+        <div className="ledger-head"><span>{activeCount} active {activeCount === 1 ? 'approval' : 'approvals'}{activeGrantCount ? ` · ${activeGrantCount} ${activeGrantCount === 1 ? 'grant' : 'grants'}` : ''}</span><span>{data.complete ? 'Covered' : 'Partial coverage'}</span></div>
         <p className="coverage">{data.coverageReport}</p>
         {data.errorCount > 0 && <p className="subtext">Some allowance reads failed. Results may be incomplete.</p>}
         <button className="btn btn-line" onClick={() => setAttempt(value => value + 1)}>Refresh scan</button>
       </section>
-      {visibleApprovals.length > 0
+      {visibleApprovals.length > 0 || visibleGrants.length > 0
         ? <div className="cards">{visibleApprovals.map(approval => {
           const identity = `${approval.token.toLowerCase()}:${approval.spender.toLowerCase()}`
           const revoked = revokedCards[identity]
@@ -159,6 +206,19 @@ export function AccountDashboard({ chain, address }: { chain: 'testnet' | 'mainn
             revokedTransaction={revoked ? { hash: revoked.hash, explorerUrl: revoked.explorerUrl } : undefined}
             onRevoke={() => void revokeApproval(approval)}
             onSaveLabel={label => saveLabel(approval.spender, label)}
+          />
+        })}{visibleGrants.map(grant => {
+          const identity = `grant:${grant.agent.toLowerCase()}:${grant.token.toLowerCase()}`
+          const revoked = revokedGrants[identity]
+          return <GrantCard
+            key={identity}
+            grant={grant}
+            canRevoke={canRevoke}
+            canEditLabel={isOwnerConnected}
+            busyText={busyKey === identity ? busyText : undefined}
+            revokedTransaction={revoked ? { hash: revoked.hash, explorerUrl: revoked.explorerUrl } : undefined}
+            onRevoke={() => void revokeGrantPermission(grant)}
+            onSaveLabel={label => saveLabel(grant.agent, label)}
           />
         })}</div>
         : <section className="empty" style={{ display: 'block' }}><h3>No active approvals found in the covered range.</h3><p>Current allowance reads were checked at block {Number(data.allowanceReadBlock).toLocaleString()}.</p></section>}

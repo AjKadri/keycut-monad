@@ -1,5 +1,6 @@
 import "./load-env-local.mjs";
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { createPublicClient, getAddress, http } from "viem";
 import { monadTestnet, monadMainnet } from "../src/chain.mjs";
@@ -7,6 +8,8 @@ import { approvalTopic } from "../src/discovery-core.mjs";
 import { discover, verify } from "../src/server/index.mjs";
 
 const deployment = JSON.parse(await readFile(new URL("../deployments/monad-testnet.json", import.meta.url), "utf8"));
+const grantDeployment = JSON.parse(await readFile(new URL("../deployments/monad-testnet-grants.json", import.meta.url), "utf8"));
+const grantSeed = JSON.parse(await readFile(new URL("../deployments/monad-testnet-grant-seed.json", import.meta.url), "utf8"));
 const owner = getAddress(deployment.owner);
 const testnetClient = createPublicClient({
   chain: monadTestnet,
@@ -23,6 +26,8 @@ const alpha = deployment.approvals.find(({ label }) => label === "Demo spender A
 const browserRevokeHash = "0xc29a3485a27cbf9f98131e7c3d082887c4de2e54026d49c63395c9a1b460cd6b";
 const charlieRevokeHash = "0x678f2d4c9e20e9d83f5912e6340da88c482d6254a39c3bc9e7f8d6810f528bde";
 const emptyLimitMs = 15_000;
+const grantAddress = getAddress(grantDeployment.address);
+const grantApproval = { token: grantSeed.token, spender: grantAddress, label: "Keycut grant contract" };
 const checks = [];
 
 function requireSeed(value, name) {
@@ -60,14 +65,16 @@ async function check(label, fn) {
 
 const seed = await (async () => {
   const started = performance.now();
-  const result = await discover({ owner, chain: monadTestnet, client: testnetClient });
+  const result = await discover({ owner, chain: monadTestnet, client: testnetClient, grantAddress });
   return { result, ms: Math.round(performance.now() - started) };
 })();
-const liveSeed = await Promise.all(deployment.approvals.map(async (approval) => ({
+const liveSeed = await Promise.all([...deployment.approvals, grantApproval].map(async (approval) => ({
   ...approval,
   live: await verify(owner, approval.token, approval.spender, { publicClient: testnetClient }),
 })));
-const expectedActive = sortedMap(liveSeed.filter(({ live }) => BigInt(live.allowance) > 0n));
+const expectedActive = sortedMap(liveSeed
+  .filter(({ live }) => BigInt(live.allowance) > 0n)
+  .map(({ token, spender, live }) => ({ token, spender, allowance: live.allowance })));
 const actualActive = sortedMap(seed.result.approvals);
 
 await check("discovers seeded approvals with full-history coverage", () => {
@@ -102,9 +109,36 @@ await check("KUSD -> Bravo remains active for the demo", async () => {
   return "350 KUSD";
 });
 
+await check("grant pay transaction succeeded", async () => {
+  const receipt = await testnetClient.getTransactionReceipt({ hash: grantSeed.payTransactionHash });
+  assert.equal(receipt.status, "success");
+  return grantSeed.payTransactionHash;
+});
+
+await check("grant over-cap transaction reverted", async () => {
+  const receipt = await testnetClient.getTransactionReceipt({ hash: grantSeed.overCapTransactionHash });
+  assert.equal(receipt.status, "reverted");
+  return grantSeed.overCapTransactionHash;
+});
+
+await check("active grant reads cap 50 KUSD and spent 10 KUSD", () => {
+  const grant = seed.result.grants.find(({ agent, token }) => agent.toLowerCase() === grantSeed.agent.toLowerCase() && token.toLowerCase() === grantSeed.token.toLowerCase());
+  assert.ok(grant, "seed grant was not discovered");
+  assert.equal(grant.cap, grantSeed.cap);
+  assert.equal(grant.spent, grantSeed.paid);
+  assert.equal(grant.active, true);
+  return `${grant.spent} of ${grant.cap} raw units`;
+});
+
+await check("after-revoke grant pay fails", () => {
+  const result = spawnSync("forge", ["test", "--match-test", "testPayAfterRevokeReverts"], { encoding: "utf8" });
+  assert.equal(result.status, 0, result.stderr || result.stdout || "forge test failed");
+  return "Foundry revoke invariant";
+});
+
 await check(`empty wallet returns 0 approvals within ${emptyLimitMs / 1000} seconds`, async () => {
   const started = performance.now();
-  const result = await discover({ owner: emptyOwner, chain: monadMainnet, client: mainnetClient });
+  const result = await discover({ owner: emptyOwner, chain: monadTestnet, client: testnetClient, grantAddress });
   const ms = Math.round(performance.now() - started);
   assert.equal(result.approvals.length, 0);
   assert.ok(ms <= emptyLimitMs, `${ms} ms exceeded ${emptyLimitMs} ms`);

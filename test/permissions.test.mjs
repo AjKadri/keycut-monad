@@ -8,6 +8,8 @@ import { revoke, verify } from "../src/permissions.mjs";
 import { monadTestnet } from "../src/chain.mjs";
 
 const deployment = JSON.parse(await readFile(new URL("../deployments/monad-testnet.json", import.meta.url), "utf8"));
+const grantDeployment = JSON.parse(await readFile(new URL("../deployments/monad-testnet-grants.json", import.meta.url), "utf8"));
+const grantSeed = JSON.parse(await readFile(new URL("../deployments/monad-testnet-grant-seed.json", import.meta.url), "utf8"));
 const revokedSeed = deployment.approvals.find(({ label }) => label === "Demo spender Charlie");
 assert.ok(revokedSeed, "seed manifest includes the Charlie approval");
 
@@ -46,10 +48,13 @@ test("live testnet verify and discover reflect the completed revoke", async () =
     fromBlock: BigInt(deployment.scanFromBlock),
     rpcFromBlock: BigInt(deployment.scanFromBlock),
     client,
+    grantAddress: grantDeployment.address,
   });
+  const grantAllowance = await verify(deployment.owner, grantSeed.token, grantDeployment.address, { publicClient: client });
   const expected = deployment.approvals
     .filter(({ label }) => label === "Demo spender Bravo")
     .map(({ token, spender, allowance }) => [`${token.toLowerCase()}:${spender.toLowerCase()}`, allowance])
+    .concat([[`${grantSeed.token.toLowerCase()}:${grantDeployment.address.toLowerCase()}`, grantAllowance.allowance]])
     .sort(([left], [right]) => left.localeCompare(right));
   const actual = result.approvals
     .map(({ token, spender, allowance }) => [`${token.toLowerCase()}:${spender.toLowerCase()}`, allowance])
@@ -60,4 +65,6 @@ test("live testnet verify and discover reflect the completed revoke", async () =
   assert.deepEqual(actual, expected);
   assert.equal(actual.length, expected.length);
   assert.equal(actual.some(([key]) => key.endsWith(`:${revokedSeed.spender.toLowerCase()}`)), false);
+  assert.equal(result.grants.length, 1);
+  assert.equal(result.grants[0].active, true);
 });
