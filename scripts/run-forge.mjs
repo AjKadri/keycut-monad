@@ -6,10 +6,11 @@ const commands = {
   "simulate-approve": { target: "script/Approve.s.sol:Approve", broadcast: false },
   deploy: { target: "script/Deploy.s.sol:Deploy", broadcast: true },
   approve: { target: "script/Approve.s.sol:Approve", broadcast: true },
+  "deploy-grants": { target: "script/DeployGrants.s.sol:DeployGrants", broadcast: true },
 };
 const command = process.argv[2];
 const selected = commands[command];
-if (!selected) throw new Error("Usage: node scripts/run-forge.mjs <simulate-deploy|deploy|simulate-approve|approve>");
+if (!selected) throw new Error("Usage: node scripts/run-forge.mjs <simulate-deploy|deploy|simulate-approve|approve|deploy-grants>");
 
 const localEnv = Object.fromEntries(
   readFileSync(".env.local", "utf8")
