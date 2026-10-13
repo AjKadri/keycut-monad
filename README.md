@@ -79,6 +79,7 @@ Copy `.env.example` to `.env.local`. `ENVIO_API_TOKEN` is server-side only. Do n
 - `MONAD_TESTNET_PRIVATE_KEY`: throwaway owner key for seed and revoke scripts.
 - `MONAD_AGENT_PRIVATE_KEY`: throwaway agent key for the grant seed and `agent:pay`.
 - `MONAD_AGENT_ADDRESS`: public agent address recorded after key generation.
+- `AGENT_VENDOR_ADDRESS`: optional default recipient for `agent:pay`; the command also accepts a vendor argument.
 - `MONAD_TOKEN_A_ADDRESS`, `MONAD_TOKEN_B_ADDRESS`: seeded KUSD and KEUR addresses.
 - `KEYCUT_GRANTS_ADDRESS`: deployed KeycutGrants address.
 
