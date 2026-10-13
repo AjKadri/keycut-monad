@@ -102,29 +102,31 @@ Contracts and spenders:
 - Bravo: `0x7148acaE93F8CfB377E714FdE4139D4616f0EDCe`
 - Charlie: `0x0f8598Dce6BA9ad5DEee6B2fbfbA5389d68C94A9`
 
-All links below are Monad Testnet links:
+All links below are Monad Testnet links. The final reseed is the active state judges should see:
 
 - [KUSD deployment](https://testnet.monadscan.com/tx/0x1bd4c9dd48abc2a879bec68519476c6cd77e63569e1a6944acc0e3ecd926511f)
 - [KEUR deployment](https://testnet.monadscan.com/tx/0x3c6afd12ac220dce28c53801468fbd5b701dc4c0f37f14c4b8e517ab596b7fed)
-- [KUSD to Alpha approval](https://testnet.monadscan.com/tx/0x73468e076903db2ab8ed5b344545bfe11ae9baae357a83ab3ca41cac6633689e)
-- [KUSD to Bravo approval](https://testnet.monadscan.com/tx/0x5decf6d199871276930cb9a4bf7ecd82a0a1f0e4bd18a9e9a8b03895cc8a0cf9)
-- [KEUR to Charlie approval](https://testnet.monadscan.com/tx/0x64ec075485eb531cce8c7a43112c0e060b7021137d1647f7d1feb7316ce3a3cc)
-- [Charlie revoke](https://testnet.monadscan.com/tx/0x678f2d4c9e20e9d83f5912e6340da88c482d6254a39c3bc9e7f8d6810f528bde)
-- [Alpha browser-wallet revoke](https://testnet.monadscan.com/tx/0xc29a3485a27cbf9f98131e7c3d082887c4de2e54026d49c63395c9a1b460cd6b)
+- [Final fresh KUSD to Alpha approval](https://testnet.monadscan.com/tx/0x5e269c7d2a159620a43da9e847344f6cdb03d35be4b374e8d87dad157028b057)
+- [Active KUSD to Bravo approval](https://testnet.monadscan.com/tx/0x758396ee377efa679731cf29249129bffb3fefb85c1dc8013744f4f140ff36f9)
+- [Active KEUR to Charlie approval](https://testnet.monadscan.com/tx/0x45b54959912520999e9aaaa513fc4f258e68ee659fff3b6681390b6e2943561a)
 - [KeycutGrants deployment](https://testnet.monadscan.com/tx/0x85e0f389403b9bcef79f5bdadc23c5e7c2ce78d111e41a06008fb2669816f0f9)
-- [Agent funding](https://testnet.monadscan.com/tx/0x85a55901234e170cadc7bf12476700400c0e7aab276dcce79830e1999d6c0736)
-- [Owner approval to KeycutGrants](https://testnet.monadscan.com/tx/0x29af20ae86402038957eb96bad6e6427752cf828b65362da1035133f6c76dfe1)
-- [Grant creation, cap 50 KUSD](https://testnet.monadscan.com/tx/0xa61e0c80d32e0d3537f626cb94b288870894826ada92f1e3d3d32506da672174)
-- [Agent pay, 10 KUSD](https://testnet.monadscan.com/tx/0xb58a43ea3ccc2477683b98d6991b181fe250d819200e7cf5d5dee1f666857de0)
-- [Agent over-cap pay, 45 KUSD reverted](https://testnet.monadscan.com/tx/0xbd1baa40ca9b9cbc3e77afe30626af20e706034b38c62cc3b3a85700f66199fb)
+- [Final agent funding](https://testnet.monadscan.com/tx/0x6c5cb3aa04fa621c17ee2b78ba952dbccf7a6e1effd4b0082a46b9ec963f2b3b)
+- [Final owner approval to KeycutGrants](https://testnet.monadscan.com/tx/0xe06427196f4ce8b2d65b82e16ece1e87e71d93557526dc027a8cde8c7502581a)
+- [Final grant creation, cap 50 KUSD](https://testnet.monadscan.com/tx/0x3eed456cd3e4628b28275ddbe045688732d8e61fa96d7c8010d58eb607c6a904)
+- [Final agent pay, 10 KUSD](https://testnet.monadscan.com/tx/0xe01382e9e1b605d1832a8e0cef731a94caa7c6bb1f46512bb6b0df686af2abe8)
+- [Final agent over-cap pay, 45 KUSD reverted](https://testnet.monadscan.com/tx/0x2222e1b73e217463c125c691d5750b7d106dcbe0bf51de78a19efa391b97ae2a)
 
-The demo grant is still active at cap 50 KUSD and spent 10 KUSD. The verifier’s post-revoke payment check uses the isolated Foundry simulation `testPayAfterRevokeReverts`; it does not revoke the live demo grant.
+The clean recording cycle used fresh approvals [Alpha](https://testnet.monadscan.com/tx/0xd3dfc53e1759003ac9cb97fbfc835d944ae69dfafa7a913070ad190918e75f44), [Bravo](https://testnet.monadscan.com/tx/0x758396ee377efa679731cf29249129bffb3fefb85c1dc8013744f4f140ff36f9), and [Charlie](https://testnet.monadscan.com/tx/0x45b54959912520999e9aaaa513fc4f258e68ee659fff3b6681390b6e2943561a), then recorded [grant revoke](https://testnet.monadscan.com/tx/0x25ddc22ac1d9b5e8d4595285282196fb14ffc0c644847334b4ed5cdefa73721a), [Bravo revoke](https://testnet.monadscan.com/tx/0x8d4e6657960ffd64f2bc2e07adab6ccf6d60b30f0011c6f4ab00922d797dc377), [agent pay 5](https://testnet.monadscan.com/tx/0xe26488aa84cc12864b9f975aa5f8490c516a39c8572064301b2ef83a9d14a9fe), [over-cap pay 45](https://testnet.monadscan.com/tx/0x24f90a9cacd49bffc5fc273bed51b90b740c2c773677a675bd7e1fc08c09a7c8), and [post-revoke pay 5](https://testnet.monadscan.com/tx/0x450e2665a2d1b55b3d9170e6235023d1eeb2b5a8077f107e1edab25aa4974a2d). The earlier recorded [Charlie revoke](https://testnet.monadscan.com/tx/0x678f2d4c9e20e9d83f5912e6340da88c482d6254a39c3bc9e7f8d6810f528bde) and [Alpha browser-wallet revoke](https://testnet.monadscan.com/tx/0xc29a3485a27cbf9f98131e7c3d082887c4de2e54026d49c63395c9a1b460cd6b) are also checked by receipt block.
+
+Earlier grant-seed receipts remain linked for reproducibility: [initial funding](https://testnet.monadscan.com/tx/0x85a55901234e170cadc7bf12476700400c0e7aab276dcce79830e1999d6c0736), [initial approval](https://testnet.monadscan.com/tx/0x29af20ae86402038957eb96bad6e6427752cf828b65362da1035133f6c76dfe1), [initial grant](https://testnet.monadscan.com/tx/0xa61e0c80d32e0d3537f626cb94b288870894826ada92f1e3d3d32506da672174), [initial pay](https://testnet.monadscan.com/tx/0xb58a43ea3ccc2477683b98d6991b181fe250d819200e7cf5d5dee1f666857de0), [initial over-cap](https://testnet.monadscan.com/tx/0xbd1baa40ca9b9cbc3e77afe30626af20e706034b38c62cc3b3a85700f66199fb), [recording-cycle funding](https://testnet.monadscan.com/tx/0xf39bb7b3efaac74fadaa8d86c933c795fff17768111ebed8c8497e774c805dcf), [recording-cycle approval](https://testnet.monadscan.com/tx/0xb7b77dd6bd88264f93b246411db57c9358c51e663c5cf48576fb21dd5a4169f7), [recording-cycle grant](https://testnet.monadscan.com/tx/0x0977b8ebeb40140875d7eccfa3f7d00878da1fb172d05766fb1fb8e72ecc1ba8), [recording-cycle pay](https://testnet.monadscan.com/tx/0x92c103adea70a1920e7e744510bde2edd284885f46cafed4f9b6214fab35a812), and [recording-cycle over-cap](https://testnet.monadscan.com/tx/0xb9a551af00cec2c05d875544d1c1919d9c5b9ba72c3f9e94a3b9f80af2ff7560).
+
+After the video, the final reseed left active Alpha, Bravo, and Charlie approvals plus the active demo grant. The final demo grant is active at cap 50 KUSD with 10 KUSD spent. The verifier’s post-revoke payment check uses the isolated Foundry simulation `testPayAfterRevokeReverts`; it does not revoke the live final grant.
 
 ## Links
 
 - Live app: [keycut-monad.vercel.app](https://keycut-monad.vercel.app/)
 - Developers: [/developers](https://keycut-monad.vercel.app/developers)
-- Demo video: _link to be added_
+- Demo video: _link to be added_ (local render: `recordings/keycut-monad-demo.mp4`)
 
 ## Pre-existing code and provenance
 
