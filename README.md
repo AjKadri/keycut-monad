@@ -124,6 +124,14 @@ Earlier grant-seed receipts remain linked for reproducibility: [initial funding]
 
 The current recording seed has active Alpha, Charlie, and Delta approvals plus an active demo grant. Bravo remains revoked. Delta is approved for 200 KUSD. The current grant is active at cap 50 KUSD with 10 KUSD spent. The verifier’s post-revoke payment check uses the isolated Foundry simulation `testPayAfterRevokeReverts`; it does not revoke the live grant.
 
+### Verified source
+
+Verified on Sourcify for Monad Testnet (chain 10143):
+
+- [KUSD (DemoToken)](https://testnet.monadscan.com/address/0xA6533b67365CE20F1Bf340dc6eEa7aEf9df1C430#code)
+- [KEUR (DemoToken)](https://testnet.monadscan.com/address/0x1B5A6FfEEC742f47Baf08327cFfEd7a80C5DAcf0#code)
+- [KeycutGrants](https://testnet.monadscan.com/address/0xF2F12BdAe4B0d5f22e281D9743aF398122f399Bf#code)
+
 ## Links
 
 - Live app: [keycut-monad.vercel.app](https://keycut-monad.vercel.app/)
