@@ -36,8 +36,7 @@ Next.js 16, React 19, TypeScript, JavaScript SDK modules, viem, Foundry Solidity
 ## Setup and run
 
 ```sh
-git clone <repository-url>
-cd Keycut_Monad
+git clone https://github.com/AjKadri/keycut-monad.git && cd keycut-monad
 cp .env.example .env.local
 npm install
 npm run dev
@@ -136,7 +135,8 @@ Verified on Sourcify for Monad Testnet (chain 10143):
 
 - Live app: [keycut-monad.vercel.app](https://keycut-monad.vercel.app/)
 - Developers: [/developers](https://keycut-monad.vercel.app/developers)
-- Demo video: _link to be added_ (local render: `recordings/keycut-monad-demo.mp4`)
+- Demo video: https://youtu.be/Gq7rdqy4yck (local render: `recordings/keycut-monad-demo.mp4`)
+- Pitch video: https://youtu.be/X8plE4RPJgo
 
 ## Pre-existing code and provenance
 
